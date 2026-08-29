@@ -13,7 +13,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   });
 
   return (
-    <div className="flex h-screen bg-[#0A0A0B]">
+    <div className="dark flex h-screen bg-background">
       <Sidebar
         userRank={session.user.rank}
         username={session.user.name ?? "Member"}

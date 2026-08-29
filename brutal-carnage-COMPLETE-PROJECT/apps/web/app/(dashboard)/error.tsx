@@ -27,7 +27,7 @@ export default function DashboardError({
       </div>
       <button
         onClick={reset}
-        className="rounded-md border border-red-800 bg-red-950/40 px-4 py-2 text-sm text-red-200 hover:bg-red-950/70"
+        className="rounded-lg border border-red-800 bg-red-950/40 px-4 py-2 text-sm text-red-200 transition-colors hover:bg-red-950/70"
       >
         Try again
       </button>

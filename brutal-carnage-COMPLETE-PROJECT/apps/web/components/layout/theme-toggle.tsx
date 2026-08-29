@@ -14,7 +14,7 @@ export function ThemeToggle() {
   useEffect(() => setMounted(true), []);
 
   if (!mounted) {
-    return <div className="h-8 w-8 rounded-md border border-zinc-800" />;
+    return <div className="h-9 w-9 rounded-lg border border-panel-border" />;
   }
 
   const isDark = theme !== "light";
@@ -22,7 +22,7 @@ export function ThemeToggle() {
   return (
     <button
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="rounded-md border border-zinc-800 p-2 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
+      className="rounded-lg border border-panel-border p-2 text-zinc-400 transition-colors hover:border-crimson-dark/60 hover:bg-white/[0.04] hover:text-zinc-100"
       title={isDark ? "Switch to light mode" : "Switch to dark mode"}
     >
       {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}

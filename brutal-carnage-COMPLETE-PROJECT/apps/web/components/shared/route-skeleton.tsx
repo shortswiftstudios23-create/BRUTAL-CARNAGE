@@ -7,18 +7,18 @@
 export function RouteSkeleton({ cards = 4 }: { cards?: number }) {
   return (
     <div className="flex-1 overflow-y-auto p-6">
-      <div className="mb-6 h-6 w-40 animate-pulse rounded bg-zinc-800/70" />
+      <div className="mb-6 h-6 w-40 animate-pulse rounded bg-white/[0.06]" />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: cards }).map((_, i) => (
           <div
             key={i}
-            className="h-28 animate-pulse rounded-lg border border-zinc-800 bg-zinc-950/60"
+            className="h-28 animate-pulse rounded-xl border border-panel-border bg-panel"
           />
         ))}
       </div>
 
-      <div className="mt-6 h-72 animate-pulse rounded-lg border border-zinc-800 bg-zinc-950/60" />
+      <div className="mt-6 h-72 animate-pulse rounded-xl border border-panel-border bg-panel" />
     </div>
   );
 }
