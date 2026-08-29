@@ -7,9 +7,26 @@ import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/permissions";
 import { reconcileWidgetPrefs, WidgetPref } from "@/lib/widgets";
 import { Wallet, Package, Users, CalendarDays, Trophy, Megaphone, ClipboardCheck } from "lucide-react";
-import { BalanceChart } from "@/components/dashboard/balance-chart";
+import dynamic from "next/dynamic";
 import { WidgetPicker } from "@/components/dashboard/widget-picker";
 import Link from "next/link";
+
+// recharts is a large client-only dependency. Loading it via a plain
+// top-level import pulls it into this route's server-rendered HTML path
+// and into the initial client bundle for every visit to /dashboard, even
+// for the split second before the chart is visible. `dynamic(...)` with
+// ssr:false defers fetching/executing that JS until after first paint,
+// swapping in a lightweight skeleton until it's ready — first load gets
+// noticeably lighter without changing what the user sees once it settles.
+const BalanceChart = dynamic(
+  () => import("@/components/dashboard/balance-chart").then((m) => m.BalanceChart),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[220px] w-full animate-pulse rounded-lg bg-white/[0.03]" />
+    ),
+  }
+);
 
 export default async function DashboardPage() {
   const session = await auth();

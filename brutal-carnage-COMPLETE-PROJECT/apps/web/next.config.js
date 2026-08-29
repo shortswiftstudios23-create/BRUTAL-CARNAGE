@@ -12,5 +12,16 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Tree-shakes these two libraries so a single `import { X } from
+  // "lucide-react"` (or recharts) doesn't pull the whole package into
+  // every route's client bundle. This alone is usually the single
+  // biggest first-load-JS win on a dashboard with this many icons/charts.
+  experimental: {
+    optimizePackageImports: ["lucide-react", "recharts"],
+  },
+  compress: true,
+  images: {
+    formats: ["image/avif", "image/webp"],
+  },
 };
 module.exports = nextConfig;
