@@ -3,10 +3,27 @@
 // on the always-on VM (see the connection guide for full setup).
 
 import { Client, GatewayIntentBits, Partials } from "discord.js";
+import * as http from "http";
 import * as guildMemberAdd from "./events/guildMemberAdd";
 import * as guildMemberUpdate from "./events/guildMemberUpdate";
 import { startEventReminderJob } from "./jobs/eventReminder";
 import { startWeeklySummaryJob } from "./jobs/weeklySummary";
+
+// Render's free "Web Service" tier requires the process to bind to a
+// port and respond to HTTP requests, or it considers the deploy failed.
+// This tiny server exists ONLY to satisfy that requirement and to give
+// an uptime-pinger (e.g. UptimeRobot) something to hit every few minutes
+// so Render doesn't spin the service down from inactivity. It has
+// nothing to do with the bot's actual Discord functionality.
+const PORT = process.env.PORT || 3000;
+http
+  .createServer((_req, res) => {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("Brutal Carnage bot is running.");
+  })
+  .listen(PORT, () => {
+    console.log(`[bot] Keep-alive server listening on port ${PORT}`);
+  });
 
 const client = new Client({
   intents: [
