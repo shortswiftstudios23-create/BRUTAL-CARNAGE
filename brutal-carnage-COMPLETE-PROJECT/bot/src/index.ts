@@ -47,54 +47,73 @@ const client = new Client({
 // Discord: the Node process never crashed, so there was nothing to log
 // or restart.
 //
-// Fix: track the last time we know for sure the gateway was alive
-// (ready, resumed, or a heartbeat ack) and run a watchdog that checks
-// it every 60s. If too much time has passed without a heartbeat, we
-// deliberately kill the process. Render's process manager automatically
-// restarts a service that exits, so this turns a silent, invisible
-// hang into a quick, self-healing restart instead of the bot just
-// sitting there disconnected for hours.
+// Fix: run an ACTIVE health check — actually make a real request to
+// Discord's API every interval — instead of passively waiting for an
+// internal gateway event. (An earlier version of this watchdog listened
+// for heartbeat-ack packets via the "raw" client event, but discord.js
+// only re-emits "raw" for real dispatch events like messages or member
+// updates, not internal gateway opcodes like heartbeat acks — so on a
+// quiet server it never fired, and the watchdog killed a perfectly
+// healthy bot every few minutes. An active REST call sidesteps that
+// entirely: if it succeeds, we know for a fact the connection is good.)
+// If several checks in a row fail or time out, we deliberately kill the
+// process. Render's process manager automatically restarts a service
+// that exits, so this turns a silent, invisible hang into a quick,
+// self-healing restart instead of the bot sitting there disconnected.
 // ----------------------------------------------------------------------
-let lastAlive = Date.now();
-const WATCHDOG_TIMEOUT_MS = 3 * 60 * 1000; // no heartbeat for 3 min = presumed dead
-const WATCHDOG_INTERVAL_MS = 60 * 1000;
+const WATCHDOG_INTERVAL_MS = 90 * 1000; // check every 90s
+const HEALTH_CHECK_TIMEOUT_MS = 15 * 1000; // give Discord's API 15s to answer
+const MAX_CONSECUTIVE_FAILURES = 3; // ~4.5 min of real, repeated failures before restarting
 
-function markAlive(reason: string) {
-  lastAlive = Date.now();
-  console.log(`[bot] heartbeat ok (${reason}) at ${new Date().toISOString()}`);
+let consecutiveFailures = 0;
+let watchdogStarted = false;
+
+async function activeHealthCheck() {
+  try {
+    await Promise.race([
+      // Lightweight authenticated REST call — if this succeeds, the bot
+      // genuinely has a working connection to Discord right now.
+      client.rest.get("/users/@me"),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("health check timed out")), HEALTH_CHECK_TIMEOUT_MS)
+      ),
+    ]);
+    if (consecutiveFailures > 0) {
+      console.log(`[bot] watchdog: connection recovered after ${consecutiveFailures} failed check(s).`);
+    }
+    consecutiveFailures = 0;
+    console.log(`[bot] watchdog: health check ok at ${new Date().toISOString()}`);
+  } catch (err) {
+    consecutiveFailures++;
+    console.warn(
+      `[bot] watchdog: health check failed (${consecutiveFailures}/${MAX_CONSECUTIVE_FAILURES}):`,
+      err instanceof Error ? err.message : err
+    );
+    if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+      console.error(
+        `[bot] watchdog: ${consecutiveFailures} consecutive failed health checks — connection is genuinely down. Exiting so Render restarts it.`
+      );
+      // Exit non-zero so Render's process manager treats this as a crash
+      // and restarts the service. Do NOT try to client.destroy()/login()
+      // again in-process first — a wedged discord.js client can fail to
+      // clean up its old socket, so a fresh process is the reliable fix.
+      process.exit(1);
+    }
+  }
 }
 
-setInterval(() => {
-  const staleFor = Date.now() - lastAlive;
-  if (staleFor > WATCHDOG_TIMEOUT_MS) {
-    console.error(
-      `[bot] watchdog: no gateway heartbeat for ${Math.round(staleFor / 1000)}s — ` +
-        `connection is likely dead even though the process is still running. Exiting so Render restarts it.`
-    );
-    // Exit non-zero so Render's process manager treats this as a crash
-    // and restarts the service. Do NOT try to client.destroy()/login()
-    // again in-process first — a wedged discord.js client can fail to
-    // clean up its old socket, so a fresh process is the reliable fix.
-    process.exit(1);
-  } else {
-    console.log(`[bot] watchdog: last heartbeat ${Math.round(staleFor / 1000)}s ago — ok`);
-  }
-}, WATCHDOG_INTERVAL_MS);
+function startWatchdog() {
+  if (watchdogStarted) return;
+  watchdogStarted = true;
+  setInterval(activeHealthCheck, WATCHDOG_INTERVAL_MS);
+}
 
 client.once("ready", () => {
   console.log(`[bot] Logged in as ${client.user?.tag}`);
-  markAlive("ready");
+  startWatchdog();
   startEventReminderJob(client);
   startWeeklySummaryJob(client);
 });
-
-// discord.js's own heartbeat ack is the most reliable signal that the
-// gateway socket is actually alive (not just that the process is up).
-client.on("raw", (packet: { op?: number }) => {
-  if (packet?.op === 11 /* HEARTBEAT_ACK */) markAlive("heartbeat ack");
-});
-client.on("resumed", () => markAlive("resumed"));
-client.on("shardReady", () => markAlive("shardReady"));
 
 client.on(guildMemberAdd.name, guildMemberAdd.execute);
 client.on(guildMemberUpdate.name, guildMemberUpdate.execute);
@@ -107,7 +126,6 @@ client.on("shardReconnecting", (shardId) => {
 });
 client.on("shardResume", (shardId) => {
   console.log(`[bot] shard ${shardId} resumed.`);
-  markAlive("shardResume");
 });
 client.on("shardError", (err, shardId) => {
   console.error(`[bot] shard ${shardId} error:`, err);
