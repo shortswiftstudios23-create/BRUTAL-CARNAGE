@@ -15,16 +15,44 @@ export default async function LeaderboardPage() {
   // Only DONATION counts toward the public leaderboard — SOLD_ITEMS income
   // is a business transaction, not a personal contribution, so it's
   // deliberately excluded here.
-  const grouped = await prisma.transaction.groupBy({
+  const moneyGrouped = await prisma.transaction.groupBy({
     by: ["userId"],
     where: { type: "DONATION", status: "APPROVED" },
     _sum: { finalAmount: true },
-    orderBy: { _sum: { finalAmount: "desc" } },
-    take: 25,
   });
 
+  // Items donated to the family (approved DONATE actions), valued at each
+  // item's suggested price so it can be combined with money into one
+  // comparable "total worth contributed" figure.
+  const itemActions = await prisma.itemAction.findMany({
+    where: { type: "DONATE", status: "APPROVED" },
+    include: { item: { select: { suggestedPrice: true } } },
+  });
+
+  const itemsValueByUser = new Map<string, number>();
+  for (const action of itemActions) {
+    const value = Number(action.item.suggestedPrice) * action.quantity;
+    itemsValueByUser.set(action.userId, (itemsValueByUser.get(action.userId) ?? 0) + value);
+  }
+
+  const moneyByUser = new Map<string, number>();
+  for (const g of moneyGrouped) {
+    moneyByUser.set(g.userId, Number(g._sum.finalAmount ?? 0));
+  }
+
+  const allUserIds = new Set<string>([...moneyByUser.keys(), ...itemsValueByUser.keys()]);
+
+  const leaderboardEntries = Array.from(allUserIds)
+    .map((userId) => {
+      const moneyDonated = moneyByUser.get(userId) ?? 0;
+      const itemsDonatedValue = itemsValueByUser.get(userId) ?? 0;
+      return { userId, moneyDonated, itemsDonatedValue, total: moneyDonated + itemsDonatedValue };
+    })
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 25);
+
   const users = await prisma.user.findMany({
-    where: { id: { in: grouped.map((g) => g.userId) } },
+    where: { id: { in: leaderboardEntries.map((g) => g.userId) } },
     include: { badges: { include: { badge: true } } },
   });
   const userById = Object.fromEntries(users.map((u) => [u.id, u]));
@@ -41,7 +69,7 @@ export default async function LeaderboardPage() {
             </h1>
           </div>
           <ul className="divide-y divide-zinc-800">
-            {grouped.map((entry, i) => {
+            {leaderboardEntries.map((entry, i) => {
               const user = userById[entry.userId];
               if (!user) return null;
               return (
@@ -70,9 +98,14 @@ export default async function LeaderboardPage() {
                       </div>
                     </div>
                   </div>
-                  <span className="font-display text-base text-zinc-100">
-                    ${Number(entry._sum.finalAmount ?? 0).toLocaleString()}
-                  </span>
+                  <div className="text-right">
+                    <p className="font-display text-base text-zinc-100">
+                      ${entry.total.toLocaleString()} <span className="text-xs font-normal text-zinc-500">total</span>
+                    </p>
+                    <p className="mt-0.5 text-xs text-zinc-500">
+                      ${entry.moneyDonated.toLocaleString()} money · ${entry.itemsDonatedValue.toLocaleString()} items
+                    </p>
+                  </div>
                 </li>
               );
             })}

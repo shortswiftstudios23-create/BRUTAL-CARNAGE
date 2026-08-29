@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Plus, X, Star } from "lucide-react";
+import { backdateOptions } from "@/lib/backdate";
 
 interface Item {
   id: string;
@@ -31,6 +32,7 @@ export function InventoryActionForm({ items, defaultType }: { items: Item[]; def
   const [selected, setSelected] = useState<SelectedExisting[]>([]);
   const [newItems, setNewItems] = useState<NewItemDraft[]>([]);
   const [note, setNote] = useState("");
+  const [daysAgo, setDaysAgo] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
   const filteredItems = items
@@ -75,6 +77,9 @@ export function InventoryActionForm({ items, defaultType }: { items: Item[]; def
 
     setSubmitting(true);
     try {
+      const occurredAt =
+        daysAgo > 0 ? new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000).toISOString() : undefined;
+
       const res = await fetch("/api/inventory", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -83,6 +88,7 @@ export function InventoryActionForm({ items, defaultType }: { items: Item[]; def
           existingItems: selected.map((s) => ({ itemId: s.itemId, quantity: s.quantity })),
           newItems: validNewItems,
           note: note || undefined,
+          occurredAt,
         }),
       });
       if (!res.ok) throw new Error();
@@ -91,6 +97,7 @@ export function InventoryActionForm({ items, defaultType }: { items: Item[]; def
       setSelected([]);
       setNewItems([]);
       setNote("");
+      setDaysAgo(0);
     } catch {
       toast.error("Couldn't submit. Try again.");
     } finally {
@@ -203,6 +210,23 @@ export function InventoryActionForm({ items, defaultType }: { items: Item[]; def
             New items go to pending approval — stock is only credited once a Business Manager+ approves.
           </p>
         )}
+      </div>
+
+      <div className="mb-3">
+        <label className="mb-1.5 block text-xs uppercase tracking-wider text-zinc-500">
+          When did this happen?
+        </label>
+        <select
+          value={daysAgo}
+          onChange={(e) => setDaysAgo(Number(e.target.value))}
+          className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+        >
+          {backdateOptions().map((opt) => (
+            <option key={opt.daysAgo} value={opt.daysAgo}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       <textarea

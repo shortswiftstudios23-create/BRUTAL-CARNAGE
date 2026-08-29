@@ -50,20 +50,31 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ success: true, status: "REJECTED" });
   }
 
+  // Admin can correct the submitted name/price before it's approved into
+  // the live catalog.
+  const finalName = parsed.data.name?.trim() || pendingItem.name;
+  const finalPrice = parsed.data.suggestedPrice ?? Number(pendingItem.suggestedPrice);
+
   const result = await prisma.$transaction(async (tx) => {
     await tx.pendingItem.update({
       where: { id: pendingItem.id },
-      data: { status: "APPROVED", reviewedById: session.user.id, reviewedAt: new Date() },
+      data: {
+        status: "APPROVED",
+        reviewedById: session.user.id,
+        reviewedAt: new Date(),
+        ...(finalName !== pendingItem.name ? { name: finalName } : {}),
+        ...(finalPrice !== Number(pendingItem.suggestedPrice) ? { suggestedPrice: finalPrice } : {}),
+      },
     });
 
     // Reuse an existing item by exact name if one appeared since submission,
     // otherwise create it fresh.
     const item = await tx.item.upsert({
-      where: { name: pendingItem.name },
+      where: { name: finalName },
       update: { currentStock: { increment: pendingItem.quantity } },
       create: {
-        name: pendingItem.name,
-        suggestedPrice: pendingItem.suggestedPrice,
+        name: finalName,
+        suggestedPrice: finalPrice,
         currentStock: pendingItem.quantity,
       },
     });

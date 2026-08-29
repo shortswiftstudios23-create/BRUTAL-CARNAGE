@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/permissions";
+import { applyBalanceDelta } from "@/lib/balance";
 
 // Income categories add to the family balance; expense categories subtract.
 const INCOME_TYPES = ["DONATION", "FAMILY_BONUS", "FAMILY_RAID", "SOLD_ITEMS", "OTHER_INCOME"];
@@ -56,11 +57,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       });
     }
 
-    await tx.familyBalance.upsert({
-      where: { id: "singleton" },
-      update: { balance: { increment: delta } },
-      create: { id: "singleton", balance: delta },
-    });
+    await applyBalanceDelta(tx, delta, "TRANSACTION_APPROVED", transaction.id);
 
     await tx.notification.create({
       data: {

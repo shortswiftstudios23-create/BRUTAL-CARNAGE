@@ -37,11 +37,16 @@ export const PERMISSIONS = {
   canIssueStrike: (r: Rank) => isAtLeast(r, "UNDER_DEPUTY"),
   canManageBlacklist: (r: Rank) => isAtLeast(r, "DEPUTY"),
 
+  // Deputy/Boss/Big Boss can list family-owned inventory for sale in the
+  // marketplace (separate from members listing their own personal items).
+  canListFamilyStockForSale: (r: Rank) => isAtLeast(r, "DEPUTY"),
+
   // Business Manager+ (inventory/money oversight)
   canApproveItemActions: (r: Rank) => isAtLeast(r, "BUSINESS_MANAGER"),
   canApprovePendingItems: (r: Rank) => isAtLeast(r, "BUSINESS_MANAGER"),
   canApproveTransactions: (r: Rank) => isAtLeast(r, "BUSINESS_MANAGER"),
   canApproveBankRequests: (r: Rank) => isAtLeast(r, "BUSINESS_MANAGER"),
+  canApproveLoans: (r: Rank) => isAtLeast(r, "BUSINESS_MANAGER"),
   canViewDetailedLogs: (r: Rank) => isAtLeast(r, "BUSINESS_MANAGER"),
 
   // Event Manager+ (event creation)

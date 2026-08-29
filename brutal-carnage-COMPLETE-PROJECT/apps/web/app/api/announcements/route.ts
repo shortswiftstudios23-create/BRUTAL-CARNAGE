@@ -51,6 +51,21 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  // Fan out to the family's 3 fixed Discord channels (Public/Fam/Event).
+  // Best-effort — a Discord outage shouldn't block the announcement from
+  // existing on the website.
+  try {
+    const { postAnnouncementToDiscord } = await import("@/lib/discord");
+    await postAnnouncementToDiscord({
+      title: parsed.data.title,
+      content: parsed.data.content,
+      pinned: parsed.data.pinned,
+      authorUsername: session.user.name ?? undefined,
+    });
+  } catch (err) {
+    console.error("[announcements/POST] Discord post failed", err);
+  }
+
   // Fan out an in-app notification to every non-blacklisted member so the
   // notification bell actually surfaces new announcements, not just the
   // board page.

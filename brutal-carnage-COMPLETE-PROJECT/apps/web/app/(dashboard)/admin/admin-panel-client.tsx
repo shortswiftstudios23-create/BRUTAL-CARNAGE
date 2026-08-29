@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Check, X, Loader2, PackagePlus, PackageMinus, Wallet, Landmark } from "lucide-react";
+import { Check, X, Loader2, PackagePlus, PackageMinus, Wallet, Landmark, HandCoins } from "lucide-react";
 
 interface PendingItem {
   id: string;
@@ -44,6 +44,15 @@ interface PendingBankRequest {
   username: string;
   amount: number;
   reason: string;
+  createdAt: string;
+}
+
+interface PendingLoan {
+  id: string;
+  username: string;
+  principal: number;
+  interestRate: number;
+  reason: string | null;
   createdAt: string;
 }
 
@@ -124,19 +133,23 @@ export function AdminPanelClient({
   canApproveItemActions,
   canApproveTransactions,
   canApproveBankRequests,
+  canApproveLoans,
   pendingItems,
   pendingItemActions,
   pendingTransactions,
   pendingBankRequests,
+  pendingLoans,
 }: {
   canApprovePendingItems: boolean;
   canApproveItemActions: boolean;
   canApproveTransactions: boolean;
   canApproveBankRequests: boolean;
+  canApproveLoans: boolean;
   pendingItems: PendingItem[];
   pendingItemActions: PendingItemAction[];
   pendingTransactions: PendingTransaction[];
   pendingBankRequests: PendingBankRequest[];
+  pendingLoans: PendingLoan[];
 }) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -163,9 +176,15 @@ export function AdminPanelClient({
   }
 
   const totalPending =
-    pendingItems.length + pendingItemActions.length + pendingTransactions.length + pendingBankRequests.length;
+    pendingItems.length + pendingItemActions.length + pendingTransactions.length + pendingBankRequests.length + pendingLoans.length;
 
-  if (!canApprovePendingItems && !canApproveItemActions && !canApproveTransactions && !canApproveBankRequests) {
+  if (
+    !canApprovePendingItems &&
+    !canApproveItemActions &&
+    !canApproveTransactions &&
+    !canApproveBankRequests &&
+    !canApproveLoans
+  ) {
     return <p className="text-sm text-zinc-500">You don't have approval permissions for anything here.</p>;
   }
 
@@ -259,6 +278,27 @@ export function AdminPanelClient({
                 <span className="font-medium">{r.username}</span> requests ${r.amount.toLocaleString()}
               </p>
               <p className="text-xs text-zinc-500">"{r.reason}"</p>
+            </Row>
+          ))}
+        </SectionShell>
+      )}
+
+      {canApproveLoans && (
+        <SectionShell icon={HandCoins} title="Loan requests" count={pendingLoans.length} empty="No loan requests awaiting approval.">
+          {pendingLoans.map((l) => (
+            <Row
+              key={l.id}
+              busy={busyId === l.id}
+              approveLabel="Approve"
+              rejectLabel="Decline"
+              onApprove={() => call(`/api/loans/${l.id}/review`, { approve: true }, "Loan approved and paid out", l.id)}
+              onReject={() => call(`/api/loans/${l.id}/review`, { approve: false }, "Loan declined", l.id)}
+            >
+              <p className="text-sm text-zinc-200">
+                <span className="font-medium">{l.username}</span> requests a ${l.principal.toLocaleString()} loan
+                at {(l.interestRate * 100).toFixed(0)}% interest
+              </p>
+              {l.reason && <p className="text-xs text-zinc-500">"{l.reason}"</p>}
             </Row>
           ))}
         </SectionShell>

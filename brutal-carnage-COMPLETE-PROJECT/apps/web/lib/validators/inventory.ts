@@ -1,5 +1,6 @@
 // lib/validators/inventory.ts
 import { z } from "zod";
+import { occurredAtSchema } from "@/lib/backdate";
 
 export const itemActionTypeSchema = z.enum(["DONATE", "TAKE", "ORDER"]);
 
@@ -26,6 +27,8 @@ export const submitInventoryActionSchema = z.object({
     )
     .default([]),
   note: z.string().max(500).optional(),
+  // Optional: "log this for yesterday / the day before" — see lib/backdate.ts
+  occurredAt: occurredAtSchema,
 }).refine(
   (data) => data.existingItems.length > 0 || data.newItems.length > 0,
   { message: "Select at least one item or add a new one." }
@@ -36,4 +39,16 @@ export type SubmitInventoryActionInput = z.infer<typeof submitInventoryActionSch
 export const approvePendingItemSchema = z.object({
   approve: z.boolean(),
   rejectionNote: z.string().max(300).optional(),
+  // Admins reviewing a submission can correct the name/price before it
+  // hits the catalog (e.g. fixing a typo or an unrealistic price).
+  name: z.string().min(2).max(80).optional(),
+  suggestedPrice: z.number().nonnegative().optional(),
+});
+
+// Bulk review: approve/reject many pending items in one call. Per-item
+// name/price overrides aren't supported here (that needs the single-item
+// edit flow) — bulk is for the common "these all look fine" case.
+export const bulkReviewPendingItemsSchema = z.object({
+  ids: z.array(z.string().cuid()).min(1),
+  approve: z.boolean(),
 });

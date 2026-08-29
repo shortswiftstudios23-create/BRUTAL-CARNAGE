@@ -7,6 +7,7 @@ import { z } from "zod";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { calculateTax, TAXED_TYPES } from "@/lib/tax";
+import { backdateOptions } from "@/lib/backdate";
 
 const formSchema = z.object({
   type: z.enum([
@@ -17,6 +18,7 @@ const formSchema = z.object({
   note: z.string().max(500).optional(),
   soldItemId: z.string().optional(),
   soldQuantity: z.coerce.number().int().positive().optional(),
+  daysAgo: z.coerce.number().int().min(0).max(2).default(0),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -72,25 +74,67 @@ export function TransactionForm({
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { type: allowedTypes[0], amount: undefined, note: "" },
+    defaultValues: { type: allowedTypes[0], amount: undefined, note: "", daysAgo: 0 },
   });
 
   const watchedType = watch("type");
   const watchedAmount = watch("amount");
+  const [keepTenPercent, setKeepTenPercent] = useState(false);
+
+  // When donating proceeds from a sale, the member can choose to keep 10%
+  // for themselves before the rest goes to the family. The amount typed
+  // into the field is the TOTAL they're holding (e.g. what they got from
+  // selling items) — donating 90% of that, with the usual 3% family tax
+  // applied on top of the donated 90%, not the original total.
+  const keptAmount = useMemo(() => {
+    if (watchedType !== "DONATION" || !keepTenPercent) return 0;
+    const amount = Number(watchedAmount);
+    if (!amount || amount <= 0) return 0;
+    return Math.round(amount * 0.1 * 100) / 100;
+  }, [watchedType, keepTenPercent, watchedAmount]);
+
+  const amountToDonate = useMemo(() => {
+    const amount = Number(watchedAmount);
+    if (!amount || amount <= 0) return 0;
+    return watchedType === "DONATION" && keepTenPercent
+      ? Math.round((amount - keptAmount) * 100) / 100
+      : amount;
+  }, [watchedType, keepTenPercent, watchedAmount, keptAmount]);
 
   const breakdown = useMemo(() => {
-    const amount = Number(watchedAmount);
-    if (!amount || amount <= 0) return null;
-    return calculateTax(amount, watchedType);
-  }, [watchedType, watchedAmount]);
+    if (!amountToDonate || amountToDonate <= 0) return null;
+    return calculateTax(amountToDonate, watchedType);
+  }, [watchedType, amountToDonate]);
 
   async function onSubmit(values: FormValues) {
     setSubmitting(true);
     try {
+      // Convert the "N days ago" selection into an actual timestamp only
+      // when it's not "today" — omitting occurredAt entirely for today
+      // keeps the record's real submission time as the source of truth.
+      const occurredAt =
+        values.daysAgo > 0
+          ? new Date(Date.now() - values.daysAgo * 24 * 60 * 60 * 1000).toISOString()
+          : undefined;
+
+      // If they're keeping 10%, only the donated portion gets submitted —
+      // the kept amount never touches the family ledger at all.
+      const payload =
+        values.type === "DONATION" && keepTenPercent
+          ? {
+              ...values,
+              amount: amountToDonate,
+              occurredAt,
+              note: values.note
+                ? `${values.note} (kept $${keptAmount.toLocaleString()} for self before donating)`
+                : `Kept $${keptAmount.toLocaleString()} for self before donating`,
+            }
+          : { ...values, occurredAt };
+
       const res = await fetch("/api/transactions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error("Request failed");
 
@@ -176,7 +220,7 @@ export function TransactionForm({
 
       <div>
         <label className="mb-1.5 block text-xs uppercase tracking-wider text-zinc-500">
-          Amount
+          {watchedType === "DONATION" && keepTenPercent ? "Total amount you're holding" : "Amount"}
         </label>
         <div className="relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">$</span>
@@ -189,6 +233,48 @@ export function TransactionForm({
           />
         </div>
         {errors.amount && <p className="mt-1 text-xs text-red-500">{errors.amount.message}</p>}
+      </div>
+
+      {watchedType === "DONATION" && (
+        <label className="flex items-center gap-2 rounded-md border border-zinc-800 bg-zinc-900/50 p-3 text-sm text-zinc-300">
+          <input
+            type="checkbox"
+            checked={keepTenPercent}
+            onChange={(e) => setKeepTenPercent(e.target.checked)}
+            className="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-red-600 focus:ring-red-800"
+          />
+          Keep 10% for myself before donating the rest
+        </label>
+      )}
+
+      {watchedType === "DONATION" && keepTenPercent && amountToDonate > 0 && (
+        <div className="rounded-md border border-zinc-800 bg-zinc-900/50 p-3 text-sm text-zinc-400">
+          <div className="flex items-center justify-between">
+            <span>You keep (10%)</span>
+            <span className="text-zinc-200">${keptAmount.toLocaleString()}</span>
+          </div>
+          <div className="mt-1 flex items-center justify-between">
+            <span>Amount you're donating (90%)</span>
+            <span className="text-zinc-200">${amountToDonate.toLocaleString()}</span>
+          </div>
+        </div>
+      )}
+
+      <div>
+        <label className="mb-1.5 block text-xs uppercase tracking-wider text-zinc-500">
+          When did this happen?
+        </label>
+        <select
+          {...register("daysAgo")}
+          className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+        >
+          {backdateOptions().map((opt) => (
+            <option key={opt.daysAgo} value={opt.daysAgo}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1 text-xs text-zinc-600">Forgot to log it on the day? Backdate up to 2 days.</p>
       </div>
 
       <div>

@@ -45,6 +45,8 @@ export async function POST(req: NextRequest) {
       startsAt: parsed.data.startsAt,
       location: parsed.data.location,
       isGiveaway: parsed.data.isGiveaway,
+      eventType: parsed.data.eventType,
+      bonusAmount: parsed.data.bonusAmount,
       createdById: session.user.id,
     },
   });

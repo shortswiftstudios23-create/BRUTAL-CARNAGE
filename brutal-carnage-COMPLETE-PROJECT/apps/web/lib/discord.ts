@@ -60,8 +60,18 @@ export async function announceEvent(event: {
   startsAt: Date;
   location?: string | null;
   isGiveaway: boolean;
+  eventType?: string | null;
+  bonusAmount?: number | null;
 }) {
   const unixTs = Math.floor(new Date(event.startsAt).getTime() / 1000);
+
+  const { EVENT_TYPE_LABELS, EVENT_TYPE_PROOF_CHANNEL } = await import("./eventChannelMap");
+  const proofChannelId = event.eventType
+    ? EVENT_TYPE_PROOF_CHANNEL[event.eventType as keyof typeof EVENT_TYPE_PROOF_CHANNEL]
+    : undefined;
+  const proofNote = proofChannelId
+    ? `📸 Send your event proof to <#${proofChannelId}>.`
+    : undefined;
 
   const res = await fetch(`${DISCORD_API}/channels/${EVENTS_CHANNEL_ID}/messages`, {
     method: "POST",
@@ -70,6 +80,8 @@ export async function announceEvent(event: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
+      content: proofNote,
+      allowed_mentions: { parse: [] },
       embeds: [
         {
           title: `${event.isGiveaway ? "🎁 Giveaway" : "📅 Event"}: ${event.title}`,
@@ -78,6 +90,12 @@ export async function announceEvent(event: {
           fields: [
             { name: "Starts", value: `<t:${unixTs}:F> (<t:${unixTs}:R>)`, inline: true },
             ...(event.location ? [{ name: "Location", value: event.location, inline: true }] : []),
+            ...(event.eventType
+              ? [{ name: "Type", value: EVENT_TYPE_LABELS[event.eventType as keyof typeof EVENT_TYPE_LABELS], inline: true }]
+              : []),
+            ...(event.bonusAmount
+              ? [{ name: "Win bonus", value: `$${Number(event.bonusAmount).toLocaleString()}`, inline: true }]
+              : []),
           ],
           footer: { text: "React or register on the website to be tagged in reminders." },
         },
@@ -92,18 +110,71 @@ export async function announceEvent(event: {
   const message = await res.json();
 
   // Store the message id so reminders reply in-thread instead of
-  // spamming a new message each time.
+  // spamming a new message each time, and so the bot's reaction listener
+  // (bot/src/events/messageReactionAdd.ts) can map a ✅ react back to
+  // this event.
   const { prisma } = await import("./prisma");
   await prisma.event.update({
     where: { id: event.id },
     data: { discordMessageId: message.id },
   });
+
+  // Pre-add the ✅ reaction ourselves so members can just click it
+  // instead of typing one — this is the reaction the bot listens for to
+  // register/unregister someone, keeping Discord and the website in sync
+  // (previously the footer told people to "react" but nothing was
+  // actually listening for it).
+  await fetch(
+    `${DISCORD_API}/channels/${EVENTS_CHANNEL_ID}/messages/${message.id}/reactions/%E2%9C%85/@me`,
+    { method: "PUT", headers: { Authorization: `Bot ${BOT_TOKEN}` } }
+  ).catch((err) => console.error(`[announceEvent] failed to seed reaction for ${event.id}`, err));
+}
+
+// Posts a short in-thread notice that an event's details changed, so
+// registered members don't miss an edited time/location.
+export async function notifyEventUpdated(event: {
+  id: string;
+  title: string;
+  discordMessageId: string | null;
+}) {
+  if (!event.discordMessageId) return;
+
+  await fetch(`${DISCORD_API}/channels/${EVENTS_CHANNEL_ID}/messages`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bot ${BOT_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      content: `✏️ **${event.title}** was updated by an event manager — check the details above.`,
+      message_reference: { message_id: event.discordMessageId },
+      allowed_mentions: { parse: [] },
+    }),
+  }).catch((err) => console.error("[notifyEventUpdated] failed", err));
 }
 
 // Opens (or reuses) a DM channel with the member and sends the strike
 // notice privately — same private-DM pattern as the credential
 // provisioning flow, so discipline never gets posted in a public channel.
 export async function sendStrikeDM(discordId: string, severity: string, reason: string) {
+  return sendDM(discordId, {
+    embeds: [
+      {
+        title: `⚠️ Strike issued — ${severity}`,
+        description: reason,
+        color: 0xdc2626,
+        footer: { text: "Brutal Carnage — Discipline notice" },
+      },
+    ],
+  });
+}
+
+// Generic private-DM sender. Opens (or reuses) a DM channel with the
+// member and posts a raw Discord message payload (content and/or embeds).
+export async function sendDM(
+  discordId: string,
+  payload: { content?: string; embeds?: Record<string, unknown>[] }
+) {
   const dmChannelRes = await fetch(`${DISCORD_API}/users/@me/channels`, {
     method: "POST",
     headers: {
@@ -121,17 +192,80 @@ export async function sendStrikeDM(discordId: string, severity: string, reason: 
       Authorization: `Bot ${BOT_TOKEN}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      embeds: [
-        {
-          title: `⚠️ Strike issued — ${severity}`,
-          description: reason,
-          color: 0xdc2626,
-          footer: { text: "Brutal Carnage — Discipline notice" },
-        },
-      ],
-    }),
+    body: JSON.stringify(payload),
   });
 
   return sendRes.ok;
+}
+
+// Notifies a member that a new private note was added about them: an
+// in-app Notification (so it shows clearly in their notification bell)
+// plus a Discord DM nudging them to check it. Never reveals note content
+// over DM — private notes stay inside the website.
+export async function notifyPrivateNoteAdded(
+  aboutUserId: string,
+  aboutUserDiscordId: string
+) {
+  const { prisma } = await import("./prisma");
+  await prisma.notification.create({
+    data: {
+      userId: aboutUserId,
+      type: "SYSTEM",
+      title: "A note was added about you",
+      body: "A private note was added to your profile by leadership. Check your notes on the Members page.",
+    },
+  });
+
+  await sendDM(aboutUserDiscordId, {
+    content: "📝 A private note was added about you. Check your notes on the website.",
+  }).catch((err) => console.error("[notifyPrivateNoteAdded] DM failed", err));
+}
+
+// Posts a new announcement to all 3 of the family's fixed Discord
+// channels (Public, Fam, Event) — previously announcements only ever
+// generated an in-app notification and never actually reached Discord.
+const ANNOUNCEMENT_CHANNEL_IDS = [
+  "1542487056830308427", // Public
+  "1542487057316712502", // Fam
+  "1542487058235527283", // Event
+];
+
+export async function postAnnouncementToDiscord(announcement: {
+  title: string;
+  content: string;
+  pinned: boolean;
+  authorUsername?: string;
+}) {
+  const embed = {
+    title: `${announcement.pinned ? "📌 " : "📣 "}${announcement.title}`,
+    description: announcement.content.slice(0, 4000),
+    color: 0xb91c1c,
+    footer: announcement.authorUsername
+      ? { text: `Posted by ${announcement.authorUsername}` }
+      : undefined,
+    timestamp: new Date().toISOString(),
+  };
+
+  const results = await Promise.allSettled(
+    ANNOUNCEMENT_CHANNEL_IDS.map((channelId) =>
+      fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bot ${BOT_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ embeds: [embed], allowed_mentions: { parse: [] } }),
+      }).then((res) => {
+        if (!res.ok) throw new Error(`Discord ${res.status} for channel ${channelId}`);
+        return res;
+      })
+    )
+  );
+
+  const failures = results.filter((r) => r.status === "rejected");
+  if (failures.length > 0) {
+    console.error(`[postAnnouncementToDiscord] ${failures.length}/${ANNOUNCEMENT_CHANNEL_IDS.length} channel posts failed`, failures);
+  }
+
+  return { succeeded: results.length - failures.length, failed: failures.length };
 }

@@ -67,7 +67,12 @@ export default async function InventoryPage() {
           </div>
 
           <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-5">
-            <h2 className="mb-4 text-sm font-medium text-zinc-200">Catalog snapshot</h2>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-sm font-medium text-zinc-200">Catalog snapshot</h2>
+              <Link href="/inventory/all" className="text-xs text-red-400 hover:text-red-300">
+                View all {items.length} →
+              </Link>
+            </div>
             <ul className="max-h-[420px] space-y-2 overflow-y-auto">
               {formattedItems.slice(0, 12).map((item) => (
                 <li key={item.id} className="flex items-center justify-between text-sm">
@@ -79,6 +84,9 @@ export default async function InventoryPage() {
               ))}
             </ul>
             <div className="mt-4 flex gap-2">
+              <Link href="/inventory/all" className="flex-1 rounded-md border border-zinc-800 py-2 text-center text-xs text-zinc-400 hover:bg-zinc-900">
+                All items
+              </Link>
               <Link href="/inventory/wishlist" className="flex-1 rounded-md border border-zinc-800 py-2 text-center text-xs text-zinc-400 hover:bg-zinc-900">
                 Wishlist
               </Link>

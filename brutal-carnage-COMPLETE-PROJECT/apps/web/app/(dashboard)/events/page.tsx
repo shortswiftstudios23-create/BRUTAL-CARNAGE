@@ -7,8 +7,20 @@ import { EventsClient } from "./events-client";
 
 export default async function EventsPage() {
   const session = await auth();
+  // A SCHEDULED event whose start time has passed auto-disappears from
+  // the website: it's either been marked LIVE/COMPLETED/CANCELLED by
+  // then, or (if nobody touched it) it's simply excluded here so it
+  // doesn't linger forever as "upcoming". Managers still find it via the
+  // event manager close-out flow if it needs a result logged.
+  const now = new Date();
   const [events, unreadCount] = await Promise.all([
     prisma.event.findMany({
+      where: {
+        OR: [
+          { status: { not: "SCHEDULED" } },
+          { status: "SCHEDULED", startsAt: { gt: now } },
+        ],
+      },
       orderBy: { startsAt: "asc" },
       include: {
         _count: { select: { registrations: true } },
@@ -34,6 +46,8 @@ export default async function EventsPage() {
     attendeeCount: e._count.registrations,
     isRegistered: e.registrations.length > 0,
     createdByUsername: e.createdBy.username,
+    eventType: e.eventType,
+    bonusAmount: e.bonusAmount ? Number(e.bonusAmount) : null,
   }));
 
   return (

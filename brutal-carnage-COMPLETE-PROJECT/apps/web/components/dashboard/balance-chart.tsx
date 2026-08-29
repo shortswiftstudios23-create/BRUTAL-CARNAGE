@@ -3,21 +3,33 @@
 
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
-// Replace with real data fetched from /api/transactions/history in production.
-const MOCK_DATA = [
-  { date: "Aug 1", balance: 42000 },
-  { date: "Aug 5", balance: 45200 },
-  { date: "Aug 10", balance: 43800 },
-  { date: "Aug 15", balance: 51000 },
-  { date: "Aug 20", balance: 49500 },
-  { date: "Aug 25", balance: 56200 },
-  { date: "Aug 29", balance: 58900 },
-];
+export interface BalanceHistoryPoint {
+  date: string; // ISO timestamp
+  balance: number;
+}
 
-export function BalanceChart() {
+// Renders whatever history it's given — the dashboard page fetches the
+// real series server-side from /api/dashboard/balance-history (backed by
+// BalanceSnapshot, written every time the family balance actually
+// changes) and passes it in here. This used to be hardcoded mock data,
+// which is the "graph isn't accurate" bug that was reported.
+export function BalanceChart({ history }: { history: BalanceHistoryPoint[] }) {
+  const data = history.map((p) => ({
+    date: new Date(p.date).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+    balance: p.balance,
+  }));
+
+  if (data.length === 0) {
+    return (
+      <div className="flex h-[220px] items-center justify-center text-sm text-zinc-600">
+        No balance activity recorded yet.
+      </div>
+    );
+  }
+
   return (
     <ResponsiveContainer width="100%" height={220}>
-      <AreaChart data={MOCK_DATA} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+      <AreaChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="balanceFill" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#DC2626" stopOpacity={0.35} />

@@ -4,8 +4,9 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { Calendar, MapPin, Users, Gift, Trophy, Loader2 } from "lucide-react";
+import { Calendar, MapPin, Users, Gift, Trophy, Loader2, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EventForm } from "./event-form";
 
 export interface EventCardData {
   id: string;
@@ -19,12 +20,15 @@ export interface EventCardData {
   attendeeCount: number;
   isRegistered: boolean;
   createdByUsername: string;
+  eventType?: string | null;
+  bonusAmount?: number | null;
 }
 
 export function EventCard({ event, canManage }: { event: EventCardData; canManage: boolean }) {
   const router = useRouter();
   const [registering, setRegistering] = useState(false);
   const [drawing, setDrawing] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   const startsAt = new Date(event.startsAt);
   const isPast = startsAt.getTime() < Date.now();
@@ -126,9 +130,41 @@ export function EventCard({ event, canManage }: { event: EventCardData; canManag
             Close out event
           </a>
         )}
+
+        {canManage && event.status !== "COMPLETED" && event.status !== "CANCELLED" && (
+          <button
+            onClick={() => setEditing(true)}
+            className="flex items-center gap-2 rounded-md border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-900"
+          >
+            <Pencil className="h-3.5 w-3.5" /> Edit
+          </button>
+        )}
       </div>
+
+      {editing && (
+        <EventForm
+          onClose={() => setEditing(false)}
+          event={{
+            id: event.id,
+            title: event.title,
+            description: event.description,
+            startsAt: toDatetimeLocal(startsAt),
+            location: event.location ?? undefined,
+            isGiveaway: event.isGiveaway,
+            eventType: event.eventType ?? undefined,
+            bonusAmount: event.bonusAmount ?? undefined,
+          }}
+        />
+      )}
     </div>
   );
+}
+
+// Formats a Date as the value a <input type="datetime-local"> expects,
+// in local time (not UTC), so the edit form pre-fills to what was set.
+function toDatetimeLocal(d: Date) {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function StatusPill({ status, result }: { status: EventCardData["status"]; result: EventCardData["result"] }) {

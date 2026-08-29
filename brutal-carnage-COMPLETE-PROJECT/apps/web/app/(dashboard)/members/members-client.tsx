@@ -1,7 +1,7 @@
 // app/(dashboard)/members/members-client.tsx
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Search, Ban, ShieldCheck, StickyNote, Loader2, X } from "lucide-react";
@@ -182,6 +182,13 @@ function MemberModal({
     }
   }
 
+  // Auto-load as soon as this member's panel opens so the note count/list
+  // is visible immediately, instead of being hidden behind an extra click.
+  useEffect(() => {
+    loadNotes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [member.id]);
+
   async function toggleBlacklist(blacklisted: boolean) {
     setBusy(true);
     try {
@@ -271,12 +278,16 @@ function MemberModal({
         )}
 
         {canViewPrivateNotes && (
-          <div>
+          <div className="rounded-lg border border-amber-900/50 bg-amber-950/20 p-3">
             <button
               onClick={loadNotes}
-              className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-zinc-500"
+              className="mb-3 flex w-full items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-400"
             >
-              <StickyNote className="h-3.5 w-3.5" /> Private notes
+              <StickyNote className="h-4 w-4" />
+              Private notes
+              <span className="ml-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500/20 px-1.5 text-[11px] font-bold text-amber-300">
+                {notes?.length ?? "…"}
+              </span>
             </button>
 
             {notesLoading && <p className="text-xs text-zinc-600">Loading…</p>}

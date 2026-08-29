@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/permissions";
 import { Wallet, TrendingUp, Clock } from "lucide-react";
 import { MoneyClient } from "./money-client";
+import { MyLoanCard } from "@/components/money/my-loan-card";
 
 export default async function MoneyPage() {
   const session = await auth();
@@ -42,6 +43,10 @@ export default async function MoneyPage() {
     where: { userId: session!.user.id, status: "PENDING" },
   });
 
+  const myLoan = await prisma.loan.findFirst({
+    where: { userId: session!.user.id, status: { in: ["PENDING", "ACTIVE"] } },
+  });
+
   return (
     <>
       <Topbar pageTitle="Family bank" notificationCount={unreadCount} />
@@ -58,7 +63,18 @@ export default async function MoneyPage() {
         </div>
 
         <div className="mx-auto max-w-xl">
-          <MoneyFormsTabs items={items} />
+          {myLoan && (
+            <MyLoanCard
+              loan={{
+                id: myLoan.id,
+                status: myLoan.status as "PENDING" | "ACTIVE",
+                principal: Number(myLoan.principal),
+                amountOwed: Number(myLoan.amountOwed),
+                interestRate: Number(myLoan.interestRate),
+              }}
+            />
+          )}
+          <MoneyFormsTabs items={items} hasActiveLoan={!!myLoan} />
         </div>
 
         <MoneyClient

@@ -6,6 +6,8 @@ import { Client, GatewayIntentBits, Partials } from "discord.js";
 import * as http from "http";
 import * as guildMemberAdd from "./events/guildMemberAdd";
 import * as guildMemberUpdate from "./events/guildMemberUpdate";
+import * as messageReactionAdd from "./events/messageReactionAdd";
+import * as messageReactionRemove from "./events/messageReactionRemove";
 import { startEventReminderJob } from "./jobs/eventReminder";
 import { startWeeklySummaryJob } from "./jobs/weeklySummary";
 
@@ -31,8 +33,13 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,      // required: member join/role-change events
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,     // required if you add message-based commands later
+    GatewayIntentBits.GuildMessageReactions, // required: ✅ react = event registration
   ],
-  partials: [Partials.GuildMember, Partials.User],
+  // Message/Reaction/User partials are required so reactionAdd/Remove
+  // still fires for messages the bot hasn't cached (e.g. after a
+  // restart) — without these, reacting to an older event announcement
+  // silently does nothing.
+  partials: [Partials.GuildMember, Partials.User, Partials.Message, Partials.Reaction],
 });
 
 // ----------------------------------------------------------------------
@@ -117,6 +124,8 @@ client.once("ready", () => {
 
 client.on(guildMemberAdd.name, guildMemberAdd.execute);
 client.on(guildMemberUpdate.name, guildMemberUpdate.execute);
+client.on(messageReactionAdd.name, messageReactionAdd.execute);
+client.on(messageReactionRemove.name, messageReactionRemove.execute);
 
 client.on("shardDisconnect", (event, shardId) => {
   console.warn(`[bot] shard ${shardId} disconnected (code ${event?.code}). discord.js will try to reconnect.`);

@@ -36,5 +36,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     data: { aboutUserId: params.id, authorId: session.user.id, content: parsed.data.content },
   });
 
+  // Notify the member a note now exists about them (in-app notification +
+  // Discord DM), without revealing the note's content.
+  const aboutUser = await prisma.user.findUnique({
+    where: { id: params.id },
+    select: { discordId: true },
+  });
+  if (aboutUser) {
+    const { notifyPrivateNoteAdded } = await import("@/lib/discord");
+    await notifyPrivateNoteAdded(params.id, aboutUser.discordId).catch((err) =>
+      console.error("[notes] notify failed", err)
+    );
+  }
+
   return NextResponse.json({ note }, { status: 201 });
 }

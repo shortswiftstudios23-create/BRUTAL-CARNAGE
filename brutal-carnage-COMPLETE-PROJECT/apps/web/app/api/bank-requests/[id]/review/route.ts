@@ -8,6 +8,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/permissions";
 import { reviewBankRequestSchema } from "@/lib/validators/money";
+import { applyBalanceDelta } from "@/lib/balance";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await auth();
@@ -72,11 +73,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       data: { status: "APPROVED", reviewedById: session.user.id, reviewedAt: new Date() },
     });
 
-    await tx.familyBalance.upsert({
-      where: { id: "singleton" },
-      update: { balance: { decrement: Number(bankRequest.amount) } },
-      create: { id: "singleton", balance: -Number(bankRequest.amount) },
-    });
+    await applyBalanceDelta(tx, -Number(bankRequest.amount), "BANK_REQUEST_APPROVED", bankRequest.id);
 
     await tx.notification.create({
       data: {

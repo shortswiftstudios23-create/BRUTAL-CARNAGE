@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/permissions";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { effectiveDate } from "@/lib/backdate";
 
 const STATUS_STYLE: Record<string, string> = {
   PENDING: "border-amber-800 bg-amber-950/40 text-amber-300",
@@ -73,7 +74,10 @@ export default async function MoneyHistoryPage() {
                     <td className="px-4 py-2">
                       <span className={`rounded border px-2 py-0.5 text-xs ${STATUS_STYLE[t.status]}`}>{t.status}</span>
                     </td>
-                    <td className="px-4 py-2 text-zinc-500">{t.createdAt.toLocaleDateString()}</td>
+                    <td className="px-4 py-2 text-zinc-500">
+                      {effectiveDate(t).toLocaleDateString()}
+                      {t.occurredAt && <span className="ml-1 text-[10px] text-amber-500">(backdated)</span>}
+                    </td>
                   </tr>
                 ))}
                 {transactions.length === 0 && (

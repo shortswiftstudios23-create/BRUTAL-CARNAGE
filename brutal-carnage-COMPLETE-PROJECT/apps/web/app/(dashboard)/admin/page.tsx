@@ -17,7 +17,7 @@ export default async function AdminPanelPage() {
   if (!session?.user || !can(session.user.rank, "canAccessAdminPanel")) redirect("/dashboard");
 
   const rank = session.user.rank;
-  const [unreadCount, pendingItems, pendingItemActions, pendingTransactions, pendingBankRequests] =
+  const [unreadCount, pendingItems, pendingItemActions, pendingTransactions, pendingBankRequests, pendingLoans] =
     await Promise.all([
       prisma.notification.count({ where: { userId: session.user.id, read: false } }),
       can(rank, "canApprovePendingItems")
@@ -48,6 +48,13 @@ export default async function AdminPanelPage() {
             include: { user: { select: { username: true, rank: true } } },
           })
         : Promise.resolve([]),
+      can(rank, "canApproveLoans")
+        ? prisma.loan.findMany({
+            where: { status: "PENDING" },
+            orderBy: { createdAt: "desc" },
+            include: { user: { select: { username: true, rank: true } } },
+          })
+        : Promise.resolve([]),
     ]);
 
   return (
@@ -59,6 +66,7 @@ export default async function AdminPanelPage() {
           canApproveItemActions={can(rank, "canApproveItemActions")}
           canApproveTransactions={can(rank, "canApproveTransactions")}
           canApproveBankRequests={can(rank, "canApproveBankRequests")}
+          canApproveLoans={can(rank, "canApproveLoans")}
           pendingItems={pendingItems.map((p) => ({
             id: p.id,
             name: p.name,
@@ -95,6 +103,14 @@ export default async function AdminPanelPage() {
             amount: Number(r.amount),
             reason: r.reason,
             createdAt: r.createdAt.toISOString(),
+          }))}
+          pendingLoans={pendingLoans.map((l) => ({
+            id: l.id,
+            username: l.user.username,
+            principal: Number(l.principal),
+            interestRate: Number(l.interestRate),
+            reason: l.reason,
+            createdAt: l.createdAt.toISOString(),
           }))}
         />
       </main>

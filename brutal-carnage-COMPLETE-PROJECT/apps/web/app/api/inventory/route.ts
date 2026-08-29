@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { type, existingItems, newItems, note } = parsed.data;
+  const { type, existingItems, newItems, note, occurredAt } = parsed.data;
 
   const result = await prisma.$transaction(async (tx) => {
     const createdActions = await Promise.all(
@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
             quantity: entry.quantity,
             note,
             status: "PENDING",
+            occurredAt,
           },
         })
       )

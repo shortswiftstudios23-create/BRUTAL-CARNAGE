@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 import { TransactionForm } from "./transaction-form";
 import { BankRequestForm } from "./bank-request-form";
+import { LoanRequestForm } from "./loan-request-form";
 
 interface ItemOption {
   id: string;
@@ -12,7 +13,7 @@ interface ItemOption {
   currentStock: number;
 }
 
-export function MoneyFormsTabs({ items }: { items: ItemOption[] }) {
+export function MoneyFormsTabs({ items, hasActiveLoan = false }: { items: ItemOption[]; hasActiveLoan?: boolean }) {
   const [tab, setTab] = useState<"give" | "take">("give");
 
   return (
@@ -41,6 +42,16 @@ export function MoneyFormsTabs({ items }: { items: ItemOption[] }) {
       ) : (
         <div className="space-y-6">
           <BankRequestForm />
+          {!hasActiveLoan && (
+            <>
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-zinc-800" />
+                <span className="text-[11px] uppercase tracking-widest text-zinc-600">need it back? try a loan</span>
+                <div className="h-px flex-1 bg-zinc-800" />
+              </div>
+              <LoanRequestForm />
+            </>
+          )}
           <div className="flex items-center gap-3">
             <div className="h-px flex-1 bg-zinc-800" />
             <span className="text-[11px] uppercase tracking-widest text-zinc-600">or just log it</span>

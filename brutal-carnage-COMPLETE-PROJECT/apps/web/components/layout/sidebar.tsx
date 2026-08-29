@@ -21,6 +21,7 @@ import {
   ArrowUpCircle,
   Users,
   ClipboardCheck,
+  Store,
 } from "lucide-react";
 
 interface NavItem {
@@ -41,6 +42,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Members", href: "/members", icon: Users },
   { label: "Inventory", href: "/inventory", icon: Package },
   { label: "Family bank", href: "/money", icon: Wallet },
+  { label: "Marketplace", href: "/marketplace", icon: Store },
   { label: "Events", href: "/events", icon: CalendarDays },
   { label: "Performance", href: "/performance", icon: TrendingUp },
   { label: "Leaderboard", href: "/leaderboard", icon: Trophy },

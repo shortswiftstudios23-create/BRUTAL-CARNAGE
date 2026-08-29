@@ -54,6 +54,15 @@ export default async function DashboardPage() {
     prisma.announcement.findMany({ where: { pinned: true }, orderBy: { createdAt: "desc" }, take: 3 }),
   ]);
 
+  // Real balance history for the chart — see BalanceSnapshot / lib/balance.ts.
+  const balanceSnapshots = await prisma.balanceSnapshot.findMany({
+    where: { createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
+    orderBy: { createdAt: "asc" },
+  });
+  const balanceHistory = balanceSnapshots.length
+    ? balanceSnapshots.map((s) => ({ date: s.createdAt.toISOString(), balance: Number(s.balance) }))
+    : [{ date: new Date().toISOString(), balance: Number(balance?.balance ?? 0) }];
+
   const prefs: WidgetPref[] = reconcileWidgetPrefs(
     (user?.dashboardWidgets as unknown as WidgetPref[]) ??
       (template?.widgets as unknown as WidgetPref[]) ??
@@ -133,7 +142,7 @@ export default async function DashboardPage() {
                   View full history →
                 </Link>
               </div>
-              <BalanceChart />
+              <BalanceChart history={balanceHistory} />
             </div>
           )}
 

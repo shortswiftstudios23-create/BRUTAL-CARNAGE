@@ -9,6 +9,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/permissions";
 import { completeEventSchema } from "@/lib/validators/events";
+import { applyBalanceDelta } from "@/lib/balance";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await auth();
@@ -93,11 +94,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         0
       );
 
-      await tx.familyBalance.upsert({
-        where: { id: "singleton" },
-        update: { balance: { decrement: totalPayout } },
-        create: { id: "singleton", balance: -totalPayout },
-      });
+      await applyBalanceDelta(tx, -totalPayout, "EVENT_WIN_BONUS", event.id);
     } else {
       // Loss (or no bonus set) — still notify attendees the event closed.
       for (const userId of attendedUserIds) {
