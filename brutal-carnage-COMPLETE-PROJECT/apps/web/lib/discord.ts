@@ -6,7 +6,7 @@
 // one-off REST calls; only the *event listening* half needs the bot's
 // persistent process).
 
-import { RANK_TO_ROLE } from "../../bot/src/lib/roleMap"; // shared package in monorepo
+import { RANK_TO_ROLE } from "./roleMap";
 import { Rank } from "@prisma/client";
 
 const DISCORD_API = "https://discord.com/api/v10";
