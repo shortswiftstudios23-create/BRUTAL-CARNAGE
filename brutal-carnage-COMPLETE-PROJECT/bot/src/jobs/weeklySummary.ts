@@ -53,12 +53,12 @@ async function postDigest(since: Date, until: Date) {
     await Promise.all([
       prisma.transaction.aggregate({
         where: { type: "DONATION", status: "APPROVED", createdAt: { gte: since, lt: until } },
-        _sum: { amount: true },
+        _sum: { finalAmount: true },
         _count: true,
       }),
       prisma.transaction.aggregate({
         where: { type: "WITHDRAWAL", status: "APPROVED", createdAt: { gte: since, lt: until } },
-        _sum: { amount: true },
+        _sum: { finalAmount: true },
         _count: true,
       }),
       prisma.user.count({ where: { joinedFamilyAt: { gte: since, lt: until } } }),
@@ -67,8 +67,8 @@ async function postDigest(since: Date, until: Date) {
       prisma.transaction.groupBy({
         by: ["userId"],
         where: { type: "DONATION", status: "APPROVED", createdAt: { gte: since, lt: until } },
-        _sum: { amount: true },
-        orderBy: { _sum: { amount: "desc" } },
+        _sum: { finalAmount: true },
+        orderBy: { _sum: { finalAmount: "desc" } },
         take: 1,
       }),
       prisma.familyBalance.findUnique({ where: { id: "singleton" } }),
@@ -82,12 +82,12 @@ async function postDigest(since: Date, until: Date) {
     { name: "💰 Family balance", value: `$${Number(balance?.balance ?? 0).toLocaleString()}`, inline: true },
     {
       name: "📥 Donations",
-      value: `$${Number(donations._sum.amount ?? 0).toLocaleString()} (${donations._count})`,
+      value: `$${Number(donations._sum.finalAmount ?? 0).toLocaleString()} (${donations._count})`,
       inline: true,
     },
     {
       name: "📤 Withdrawals",
-      value: `$${Number(withdrawals._sum.amount ?? 0).toLocaleString()} (${withdrawals._count})`,
+      value: `$${Number(withdrawals._sum.finalAmount ?? 0).toLocaleString()} (${withdrawals._count})`,
       inline: true,
     },
     { name: "🆕 New members", value: String(newMembers), inline: true },
@@ -97,7 +97,7 @@ async function postDigest(since: Date, until: Date) {
       ? [
           {
             name: "🏆 Top donor this week",
-            value: `${topDonorUser.username} — $${Number(topDonor[0]._sum.amount ?? 0).toLocaleString()}`,
+            value: `${topDonorUser.username} — $${Number(topDonor[0]._sum.finalAmount ?? 0).toLocaleString()}`,
             inline: false,
           },
         ]

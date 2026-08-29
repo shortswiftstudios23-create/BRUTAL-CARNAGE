@@ -10,7 +10,7 @@
 //   4. If they already have an account, just sync the rank silently —
 //      no repeat credential DMs on every subsequent promotion.
 
-import { GuildMember, Events, EmbedBuilder } from "discord.js";
+import { GuildMember, PartialGuildMember, Events, EmbedBuilder } from "discord.js";
 import { prisma } from "../lib/prisma";
 import { resolveHighestRank } from "../lib/roleMap";
 import { generateTempPassword, generateUsername, hashPassword } from "../lib/credentials";
@@ -18,8 +18,27 @@ import { logAudit } from "../lib/audit";
 
 export const name = Events.GuildMemberUpdate;
 
-export async function execute(oldMember: GuildMember, newMember: GuildMember) {
+export function execute(
+  oldMember: GuildMember | PartialGuildMember,
+  newMember: GuildMember
+): void {
+  handle(oldMember, newMember).catch((err) => {
+    console.error(`[guildMemberUpdate] Failed processing role update for ${newMember.id}`, err);
+  });
+}
+
+async function handle(
+  oldMemberMaybePartial: GuildMember | PartialGuildMember,
+  newMember: GuildMember
+) {
   try {
+    // oldMember can arrive partial (missing cached role data) if it
+    // wasn't in Discord.js's cache — fetch the full member so role
+    // diffing below is reliable instead of comparing against an empty set.
+    const oldMember = oldMemberMaybePartial.partial
+      ? await oldMemberMaybePartial.fetch()
+      : oldMemberMaybePartial;
+
     const oldRoleIds = [...oldMember.roles.cache.keys()];
     const newRoleIds = [...newMember.roles.cache.keys()];
 
@@ -68,7 +87,9 @@ export async function execute(oldMember: GuildMember, newMember: GuildMember) {
       await logAudit(user.id, "RANK_SYNCED_FROM_DISCORD", { from: oldRank, to: newRank });
     }
   } catch (err) {
-    console.error(`[guildMemberUpdate] Failed processing role update for ${newMember.id}`, err);
+    // Re-thrown so execute()'s .catch() logs it consistently with other
+    // event handlers, rather than duplicating error logging here.
+    throw err;
   }
 }
 
