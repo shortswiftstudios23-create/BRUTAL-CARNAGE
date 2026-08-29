@@ -53,12 +53,31 @@ async function handle(
       where: { discordId: newMember.id },
     });
 
-    if (!user) {
-      console.warn(`[guildMemberUpdate] Role changed for ${newMember.id} but no website account exists. Did guildMemberAdd fire?`);
-      return;
+    let resolvedUser = user;
+
+    if (!resolvedUser) {
+      // This shouldn't normally happen — guildMemberAdd should have
+      // already provisioned the account when they joined. But if that
+      // event was ever missed (e.g. the gateway connection was silently
+      // dead for a few minutes around the time they joined), we'd
+      // otherwise strand this member with a role and no account,
+      // silently, forever. Self-heal by provisioning it here instead.
+      console.warn(
+        `[guildMemberUpdate] No website account for ${newMember.id} (${newMember.user.tag}) — guildMemberAdd was likely missed. Provisioning it now instead of skipping.`
+      );
+      resolvedUser = await prisma.user.create({
+        data: {
+          discordId: newMember.id,
+          username: newMember.user.username,
+          discordAvatar: newMember.user.displayAvatarURL(),
+          rank: "NOOB",
+        },
+      });
+      await logAudit(resolvedUser.id, "ACCOUNT_PROVISIONED_LATE_ON_ROLE_UPDATE");
     }
 
-    const isFirstRankGrant = !user.passwordHash;
+    const user2 = resolvedUser;
+    const isFirstRankGrant = !user2.passwordHash;
 
     if (isFirstRankGrant) {
       const username = generateUsername(newMember.user.username);
@@ -66,7 +85,7 @@ async function handle(
       const passwordHash = await hashPassword(tempPassword);
 
       await prisma.user.update({
-        where: { id: user.id },
+        where: { id: user2.id },
         data: {
           rank: newRank,
           username,
@@ -76,15 +95,15 @@ async function handle(
       });
 
       await sendCredentialsDM(newMember, username, tempPassword, newRank);
-      await logAudit(user.id, "CREDENTIALS_ISSUED", { rank: newRank });
+      await logAudit(user2.id, "CREDENTIALS_ISSUED", { rank: newRank });
     } else {
       await prisma.user.update({
-        where: { id: user.id },
+        where: { id: user2.id },
         data: { rank: newRank },
       });
 
       await sendRankUpdateDM(newMember, newRank);
-      await logAudit(user.id, "RANK_SYNCED_FROM_DISCORD", { from: oldRank, to: newRank });
+      await logAudit(user2.id, "RANK_SYNCED_FROM_DISCORD", { from: oldRank, to: newRank });
     }
   } catch (err) {
     // Re-thrown so execute()'s .catch() logs it consistently with other
