@@ -40,8 +40,29 @@ interface ItemOption {
   currentStock: number;
 }
 
-export function TransactionForm({ items = [] }: { items?: ItemOption[] }) {
+// Which categories count as money coming IN to the family vs going OUT.
+// Used to split the form into a clean "Give money" / "Take money" pair
+// instead of one dropdown mixing both directions together.
+const GIVE_TYPES: FormValues["type"][] = ["DONATION", "FAMILY_BONUS", "SOLD_ITEMS", "OTHER_INCOME"];
+const TAKE_TYPES: FormValues["type"][] = [
+  "WITHDRAWAL",
+  "FAMILY_RAID",
+  "CARS_FUEL",
+  "RECALLING_CARS",
+  "INVESTMENT",
+  "OTHER_EXPENSE",
+];
+
+export function TransactionForm({
+  items = [],
+  mode = "give",
+}: {
+  items?: ItemOption[];
+  /** "give" shows only income categories, "take" shows only expense/record categories. */
+  mode?: "give" | "take";
+}) {
   const [submitting, setSubmitting] = useState(false);
+  const allowedTypes = mode === "give" ? GIVE_TYPES : TAKE_TYPES;
 
   const {
     register,
@@ -51,7 +72,7 @@ export function TransactionForm({ items = [] }: { items?: ItemOption[] }) {
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { type: "DONATION", amount: undefined, note: "" },
+    defaultValues: { type: allowedTypes[0], amount: undefined, note: "" },
   });
 
   const watchedType = watch("type");
@@ -85,6 +106,17 @@ export function TransactionForm({ items = [] }: { items?: ItemOption[] }) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 rounded-lg border border-zinc-800 bg-zinc-950/60 p-5">
       <div>
+        <h2 className="mb-1 text-sm font-medium text-zinc-200">
+          {mode === "give" ? "Give money to the family" : "Record money taken / spent"}
+        </h2>
+        <p className="mb-3 text-xs text-zinc-500">
+          {mode === "give"
+            ? "Donations, bonuses, and other income credited to the family balance."
+            : "Fuel, raids, investments, and other expenses paid out of the family balance."}
+        </p>
+      </div>
+
+      <div>
         <label className="mb-1.5 block text-xs uppercase tracking-wider text-zinc-500">
           Category
         </label>
@@ -92,9 +124,9 @@ export function TransactionForm({ items = [] }: { items?: ItemOption[] }) {
           {...register("type")}
           className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
         >
-          {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
+          {allowedTypes.map((value) => (
             <option key={value} value={value}>
-              {label}
+              {CATEGORY_LABELS[value]}
             </option>
           ))}
         </select>

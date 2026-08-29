@@ -32,6 +32,8 @@ export default async function EvidencePage() {
             id: f.id,
             url: f.url,
             type: f.type as "video" | "image",
+            title: f.title,
+            description: f.description,
             relatedReportId: f.relatedReportId,
             uploadedBy: uploaderMap.get(f.uploadedById) ?? "Unknown",
             createdAt: f.createdAt.toISOString(),

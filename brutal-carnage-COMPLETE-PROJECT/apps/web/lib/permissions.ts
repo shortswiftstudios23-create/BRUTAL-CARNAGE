@@ -56,6 +56,11 @@ export const PERMISSIONS = {
   canManageAnnouncements: (r: Rank) => isAtLeast(r, "BOSS"),
   canEditFamilyBalanceDirectly: (r: Rank) => isAtLeast(r, "BOSS"),
   canManageAdminWidgets: (r: Rank) => isAtLeast(r, "BOSS"),
+
+  // Admin panel — the consolidated "everything awaiting a decision"
+  // screen. Gated to whoever can approve at least one thing (Business
+  // Manager and up: admins, under deputy, deputy, boss, big boss).
+  canAccessAdminPanel: (r: Rank) => isAtLeast(r, "BUSINESS_MANAGER"),
 } as const;
 
 export type PermissionKey = keyof typeof PERMISSIONS;

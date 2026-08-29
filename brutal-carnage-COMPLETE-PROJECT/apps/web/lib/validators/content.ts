@@ -27,6 +27,8 @@ export const saveRulesSchema = z.object({
 export const createEvidenceSchema = z.object({
   url: z.string().url(),
   type: z.enum(["video", "image"]),
+  title: z.string().max(120).optional(),
+  description: z.string().max(1000).optional(),
   relatedReportId: z.string().optional(),
 });
 

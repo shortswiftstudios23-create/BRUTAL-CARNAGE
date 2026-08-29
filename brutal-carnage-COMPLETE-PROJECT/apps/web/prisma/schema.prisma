@@ -432,6 +432,8 @@ model EvidenceFile {
   id        String   @id @default(cuid())
   url       String
   type      String   // "video" | "image"
+  title       String?  // short label, e.g. "Warehouse raid footage"
+  description String?  // free-text details about what the link shows
   relatedReportId String?
   uploadedById String
   createdAt DateTime @default(now())

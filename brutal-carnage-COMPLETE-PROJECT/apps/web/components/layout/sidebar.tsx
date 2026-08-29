@@ -20,6 +20,7 @@ import {
   ChevronsUpDown,
   ArrowUpCircle,
   Users,
+  ClipboardCheck,
 } from "lucide-react";
 
 interface NavItem {
@@ -31,6 +32,12 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  {
+    label: "Admin panel",
+    href: "/admin",
+    icon: ClipboardCheck,
+    visible: (r) => can(r, "canAccessAdminPanel"),
+  },
   { label: "Members", href: "/members", icon: Users },
   { label: "Inventory", href: "/inventory", icon: Package },
   { label: "Family bank", href: "/money", icon: Wallet },

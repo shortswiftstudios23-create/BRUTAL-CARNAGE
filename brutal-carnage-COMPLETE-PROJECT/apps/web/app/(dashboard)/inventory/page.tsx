@@ -51,6 +51,16 @@ export default async function InventoryPage() {
           </Link>
         )}
 
+        {can(session!.user.rank, "canApproveItemActions") && (
+          <Link
+            href="/admin"
+            className="mb-6 flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-950/60 px-4 py-3 text-sm text-zinc-400 hover:bg-zinc-900"
+          >
+            <span>Approve donate/take/order requests on existing items</span>
+            <span>Open admin panel →</span>
+          </Link>
+        )}
+
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <InventoryActionForm items={formattedItems} defaultType="DONATE" />

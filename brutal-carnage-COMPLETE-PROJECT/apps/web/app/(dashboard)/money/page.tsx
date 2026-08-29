@@ -1,8 +1,7 @@
 // app/(dashboard)/money/page.tsx
 import { Topbar } from "@/components/layout/topbar";
 import { StatCard } from "@/components/shared/stat-card";
-import { TransactionForm } from "@/components/money/transaction-form";
-import { BankRequestForm } from "@/components/money/bank-request-form";
+import { MoneyFormsTabs } from "@/components/money/money-forms-tabs";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/permissions";
@@ -58,9 +57,8 @@ export default async function MoneyPage() {
           <StatCard label="Pending bank requests" value={pendingBankCount.toString()} icon={Clock} accent={pendingBankCount > 0 ? "danger" : "neutral"} />
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <TransactionForm items={items} />
-          <BankRequestForm />
+        <div className="mx-auto max-w-xl">
+          <MoneyFormsTabs items={items} />
         </div>
 
         <MoneyClient
