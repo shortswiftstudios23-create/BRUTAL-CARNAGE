@@ -1,0 +1,471 @@
+// ============================================================================
+// BRUTAL CARNAGE — FAMILY MANAGEMENT SYSTEM
+// Prisma Schema — PostgreSQL (Supabase)
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum Rank {
+  NOOB
+  ROOKIE
+  CADET
+  TURFER
+  EVENT_MANAGER
+  BUSINESS_MANAGER
+  UNDER_DEPUTY
+  DEPUTY
+  BOSS
+  BIG_BOSS
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum TransactionType {
+  DONATION
+  WITHDRAWAL
+  FAMILY_BONUS
+  FAMILY_RAID
+  CARS_FUEL
+  RECALLING_CARS
+  INVESTMENT
+  SOLD_ITEMS
+  OTHER_INCOME
+  OTHER_EXPENSE
+}
+
+enum ItemActionType {
+  DONATE
+  TAKE
+  ORDER
+}
+
+enum EventStatus {
+  SCHEDULED
+  LIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum EventResult {
+  WIN
+  LOSS
+  NONE
+}
+
+enum StrikeSeverity {
+  MINOR
+  MAJOR
+  SEVERE
+}
+
+enum NotificationType {
+  APPROVAL
+  PROMOTION
+  STRIKE
+  EVENT
+  ANNOUNCEMENT
+  BANK
+  SYSTEM
+}
+
+// ============================================================================
+// CORE: USER / DISCORD IDENTITY
+// ============================================================================
+
+model User {
+  id                String   @id @default(cuid())
+  discordId         String   @unique
+  username          String
+  discordAvatar     String?
+  email             String?  @unique
+
+  // Website credentials (set by bot on role-grant, hashed)
+  passwordHash      String?
+  mustChangePassword Boolean @default(true)
+
+  rank              Rank     @default(NOOB)
+  isBlacklisted     Boolean  @default(false)
+  blacklistReason   String?
+
+  joinedFamilyAt    DateTime @default(now())
+  lastActiveAt      DateTime @default(now())
+
+  // Per-user dashboard widget layout — null means "use the org default
+  // template" (see DashboardWidgetTemplate below). Shape:
+  // { id: string; enabled: boolean; order: number }[]
+  dashboardWidgets  Json?
+
+  // relations
+  itemActions        ItemAction[]      @relation("ItemActionsByUser")
+  pendingItems        PendingItem[]     @relation("PendingItemsByUser")
+  transactions        Transaction[]     @relation("TransactionsByUser")
+  bankRequests        BankRequest[]     @relation("BankRequestsByUser")
+  eventRegistrations  EventRegistration[]
+  eventsCreated       Event[]           @relation("EventsCreatedBy")
+  badges              UserBadge[]
+  promotionRequests   PromotionRequest[] @relation("PromotionRequestsByUser")
+  strikesReceived     Strike[]           @relation("StrikesReceived")
+  strikesIssued       Strike[]           @relation("StrikesIssuedBy")
+  reports             Report[]           @relation("ReportsByUser")
+  reportsAgainst      Report[]           @relation("ReportsAgainstUser")
+  privateNotes        PrivateNote[]      @relation("NotesAboutUser")
+  privateNotesAuthored PrivateNote[]     @relation("NotesAuthoredBy")
+  notifications       Notification[]
+  auditLogs           AuditLog[]
+  favoriteItems       FavoriteItem[]
+  wishlistItems       WishlistItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([rank])
+  @@index([discordId])
+}
+
+// ============================================================================
+// INVENTORY SYSTEM
+// ============================================================================
+
+model Item {
+  id             String   @id @default(cuid())
+  name           String   @unique
+  suggestedPrice Decimal  @db.Decimal(12, 2)
+  currentStock   Int      @default(0)
+  imageUrl       String?
+  category       String?
+
+  actions        ItemAction[]
+  favoritedBy    FavoriteItem[]
+  wishlistedBy   WishlistItem[]
+  soldInTransactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PendingItem {
+  id             String         @id @default(cuid())
+  name           String
+  suggestedPrice Decimal        @db.Decimal(12, 2)
+  quantity       Int
+  reason         String?
+  status         ApprovalStatus @default(PENDING)
+
+  submittedBy    User   @relation("PendingItemsByUser", fields: [submittedById], references: [id])
+  submittedById  String
+
+  reviewedById   String?
+  reviewedAt     DateTime?
+  rejectionNote  String?
+
+  createdAt DateTime @default(now())
+
+  @@index([status])
+}
+
+model ItemAction {
+  id         String         @id @default(cuid())
+  item       Item           @relation(fields: [itemId], references: [id])
+  itemId     String
+  user       User           @relation("ItemActionsByUser", fields: [userId], references: [id])
+  userId     String
+  type       ItemActionType
+  quantity   Int
+  status     ApprovalStatus @default(PENDING)
+  note       String?
+
+  reviewedById String?
+  reviewedAt   DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([status])
+}
+
+model FavoriteItem {
+  id     String @id @default(cuid())
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+  item   Item   @relation(fields: [itemId], references: [id])
+  itemId String
+
+  @@unique([userId, itemId])
+}
+
+model WishlistItem {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  item      Item     @relation(fields: [itemId], references: [id])
+  itemId    String
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, itemId])
+}
+
+// ============================================================================
+// MONEY SYSTEM
+// ============================================================================
+
+model FamilyBalance {
+  id      String  @id @default("singleton")
+  balance Decimal @db.Decimal(14, 2) @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+model Transaction {
+  id           String          @id @default(cuid())
+  type         TransactionType
+  category     TransactionType
+  originalAmount Decimal       @db.Decimal(12, 2)
+  taxAmount    Decimal         @db.Decimal(12, 2) @default(0)
+  finalAmount  Decimal         @db.Decimal(12, 2)
+  note         String?
+
+  user         User            @relation("TransactionsByUser", fields: [userId], references: [id])
+  userId       String
+
+  status       ApprovalStatus  @default(PENDING)
+  reviewedById String?
+  reviewedAt   DateTime?
+
+  // Only used for type = SOLD_ITEMS. Links the sale to the item that
+  // left stock so approval can decrement inventory automatically.
+  soldItemId     String?
+  soldItem       Item?   @relation(fields: [soldItemId], references: [id])
+  soldQuantity   Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+}
+
+model BankRequest {
+  id           String         @id @default(cuid())
+  amount       Decimal        @db.Decimal(12, 2)
+  reason       String
+  status       ApprovalStatus @default(PENDING)
+
+  user         User   @relation("BankRequestsByUser", fields: [userId], references: [id])
+  userId       String
+
+  reviewedById String?
+  reviewedAt   DateTime?
+  rejectionNote String?
+
+  createdAt DateTime @default(now())
+
+  @@index([status])
+}
+
+// ============================================================================
+// EVENTS
+// ============================================================================
+
+model Event {
+  id             String      @id @default(cuid())
+  title          String
+  description    String
+  status         EventStatus @default(SCHEDULED)
+  result         EventResult @default(NONE)
+  startsAt       DateTime
+  location       String?
+
+  bonusAmount    Decimal?    @db.Decimal(12, 2)
+  mvpBonusAmount Decimal?    @db.Decimal(12, 2)
+  mvpUserId      String?
+
+  isGiveaway     Boolean     @default(false)
+
+  createdBy      User    @relation("EventsCreatedBy", fields: [createdById], references: [id])
+  createdById    String
+
+  registrations  EventRegistration[]
+
+  discordMessageId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([startsAt])
+}
+
+model EventRegistration {
+  id         String   @id @default(cuid())
+  event      Event    @relation(fields: [eventId], references: [id])
+  eventId    String
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  attended   Boolean  @default(false)
+  registeredAt DateTime @default(now())
+
+  @@unique([eventId, userId])
+}
+
+// ============================================================================
+// PERFORMANCE / BADGES
+// ============================================================================
+
+model Badge {
+  id          String @id @default(cuid())
+  name        String @unique
+  description String
+  iconUrl     String?
+  users       UserBadge[]
+}
+
+model UserBadge {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  badge     Badge    @relation(fields: [badgeId], references: [id])
+  badgeId   String
+  awardedAt DateTime @default(now())
+
+  @@unique([userId, badgeId])
+}
+
+// ============================================================================
+// PROMOTION & DISCIPLINE
+// ============================================================================
+
+model PromotionRequest {
+  id            String         @id @default(cuid())
+  user          User           @relation("PromotionRequestsByUser", fields: [userId], references: [id])
+  userId        String
+  fromRank      Rank
+  toRank        Rank
+  statsSnapshot Json
+  status        ApprovalStatus @default(PENDING)
+  reviewedById  String?
+  reviewedAt    DateTime?
+  rejectionNote String?
+
+  createdAt DateTime @default(now())
+
+  @@index([status])
+}
+
+model Strike {
+  id         String         @id @default(cuid())
+  user       User           @relation("StrikesReceived", fields: [userId], references: [id])
+  userId     String
+  issuedBy   User           @relation("StrikesIssuedBy", fields: [issuedById], references: [id])
+  issuedById String
+  severity   StrikeSeverity
+  reason     String
+  syncedToDiscord Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Report {
+  id             String         @id @default(cuid())
+  reportedBy     User           @relation("ReportsByUser", fields: [reportedById], references: [id])
+  reportedById   String
+  reportedUser   User           @relation("ReportsAgainstUser", fields: [reportedUserId], references: [id])
+  reportedUserId String
+  statement      String
+  videoProofUrl  String
+  status         ApprovalStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+
+  @@index([status])
+}
+
+model PrivateNote {
+  id         String   @id @default(cuid())
+  about      User     @relation("NotesAboutUser", fields: [aboutUserId], references: [id])
+  aboutUserId String
+  author     User     @relation("NotesAuthoredBy", fields: [authorId], references: [id])
+  authorId   String
+  content    String
+
+  createdAt DateTime @default(now())
+}
+
+// ============================================================================
+// ANNOUNCEMENTS / RULES / EVIDENCE / NOTIFICATIONS / AUDIT
+// ============================================================================
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  pinned    Boolean  @default(false)
+  createdById String
+  createdAt DateTime @default(now())
+}
+
+model Rule {
+  id        String   @id @default(cuid())
+  order     Int
+  title     String
+  content   String
+  updatedAt DateTime @updatedAt
+}
+
+model EvidenceFile {
+  id        String   @id @default(cuid())
+  url       String
+  type      String   // "video" | "image"
+  relatedReportId String?
+  uploadedById String
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String            @id @default(cuid())
+  user      User              @relation(fields: [userId], references: [id])
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  read      Boolean           @default(false)
+  createdAt DateTime          @default(now())
+
+  @@index([userId, read])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    String?
+  action    String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([action])
+}
+
+// The default widget layout new/unconfigured members see. Singleton row,
+// id is always "default". Boss+ edits this via Dashboard → Customize →
+// "Set as family default". Same shape as User.dashboardWidgets.
+model DashboardWidgetTemplate {
+  id        String   @id @default("default")
+  widgets   Json
+  updatedAt DateTime @updatedAt
+}
