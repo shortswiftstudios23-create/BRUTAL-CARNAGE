@@ -3,9 +3,16 @@
 // members are locked out entirely, and rank-gated route prefixes are
 // enforced here so pages don't each need their own redirect logic.
 
-import { auth } from "@/lib/auth";
+import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
+import { authConfig } from "@/lib/auth.config";
 import { PERMISSIONS, type PermissionKey } from "@/lib/permissions";
+
+// IMPORTANT: middleware runs on the Edge runtime, which cannot run
+// Prisma or bcrypt. Do NOT import { auth } from "@/lib/auth" here —
+// that pulls in the full Node-only config and will crash on every
+// request. authConfig (lib/auth.config.ts) is the Edge-safe subset.
+const { auth } = NextAuth(authConfig);
 
 // Map route prefixes to the permission required to access them.
 // Anything not listed here just requires a signed-in, non-blacklisted user.
