@@ -17,6 +17,12 @@
 import type { NextAuthConfig } from "next-auth";
 
 export const authConfig: NextAuthConfig = {
+  // Passed explicitly rather than relying on NextAuth's automatic
+  // AUTH_SECRET env lookup — that lookup was silently failing on Vercel
+  // (logs showed "MissingSecret" even with AUTH_SECRET set in the
+  // dashboard), so we read it directly here instead. Falls back to
+  // NEXTAUTH_SECRET too, since both were being set to the same value.
+  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
   pages: {
     signIn: "/login",
     error: "/login",
