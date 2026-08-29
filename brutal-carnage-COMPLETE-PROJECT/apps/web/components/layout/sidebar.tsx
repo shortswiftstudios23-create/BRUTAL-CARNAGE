@@ -19,6 +19,7 @@ import {
   Trophy,
   ChevronsUpDown,
   ArrowUpCircle,
+  Users,
 } from "lucide-react";
 
 interface NavItem {
@@ -30,6 +31,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Members", href: "/members", icon: Users },
   { label: "Inventory", href: "/inventory", icon: Package },
   { label: "Family bank", href: "/money", icon: Wallet },
   { label: "Events", href: "/events", icon: CalendarDays },
