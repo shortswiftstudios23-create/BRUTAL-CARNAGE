@@ -4,6 +4,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
+import { useState } from "react";
 import { Rank } from "@prisma/client";
 import { can } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
@@ -24,6 +26,7 @@ import {
   ClipboardCheck,
   Store,
   X,
+  LogOut,
 } from "lucide-react";
 
 interface NavItem {
@@ -75,6 +78,8 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const { isOpen, close } = useSidebar();
+  const [logoFailed, setLogoFailed] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <>
@@ -95,8 +100,21 @@ export function Sidebar({
         )}
       >
         <div className="flex items-center gap-3 border-b border-zinc-800 px-5 py-5">
-          <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded border border-red-800/60">
-            <Image src="/logo.png" alt="Brutal Carnage" fill className="object-cover" />
+          <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded border border-red-800/60 bg-red-950/40">
+            {logoFailed ? (
+              <span className="text-xs font-display tracking-wide text-red-300">BC</span>
+            ) : (
+              <Image
+                src="/logo.png"
+                alt="Brutal Carnage"
+                fill
+                sizes="36px"
+                priority
+                unoptimized
+                className="object-cover"
+                onError={() => setLogoFailed(true)}
+              />
+            )}
           </div>
           <div className="min-w-0 flex-1 leading-tight">
             <p className="truncate font-display text-sm tracking-wide text-zinc-100">BRUTAL CARNAGE</p>
@@ -142,8 +160,27 @@ export function Sidebar({
           })}
         </nav>
 
-        <div className="border-t border-zinc-800 p-3">
-          <button className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-zinc-900">
+        <div className="relative border-t border-zinc-800 p-3">
+          {menuOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} aria-hidden="true" />
+              <div className="absolute bottom-full left-3 right-3 z-20 mb-1 overflow-hidden rounded-md border border-zinc-800 bg-zinc-950 shadow-lg">
+                <button
+                  onClick={() => signOut({ callbackUrl: "/login" })}
+                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-red-300 hover:bg-red-950/40"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Log out
+                </button>
+              </div>
+            </>
+          )}
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-zinc-900"
+          >
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-xs font-medium text-zinc-300">
               {avatarUrl ? (
                 <Image src={avatarUrl} alt={username} width={32} height={32} className="rounded-full" />

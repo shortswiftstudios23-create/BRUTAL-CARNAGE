@@ -83,10 +83,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     // the role change and DB state are already committed at this point,
     // so a Discord post failure here shouldn't roll anything back.
     await announcePromotionApproved({
+      promotedGameId: request.user.gameId,
       promotedDiscordId: request.user.discordId,
       approvedByDiscordId: session.user.discordId,
       fromRank: request.fromRank,
       toRank: request.toRank,
+      reason: request.reason,
     }).catch((err) => console.error("[promotions] failed to announce approval", err));
 
     return NextResponse.json({ success: true });

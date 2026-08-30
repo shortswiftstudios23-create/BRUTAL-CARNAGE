@@ -70,10 +70,11 @@ export async function POST(req: NextRequest) {
   // hiccup shouldn't fail the request itself.
   const requester = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { gameId: true },
+    select: { gameId: true, discordId: true },
   });
   await postPromotionRequestToDiscord({
     gameId: requester?.gameId ?? null,
+    discordId: requester?.discordId ?? session.user.discordId,
     fromRank: session.user.rank,
     toRank: parsed.data.toRank,
     reason: parsed.data.reason,

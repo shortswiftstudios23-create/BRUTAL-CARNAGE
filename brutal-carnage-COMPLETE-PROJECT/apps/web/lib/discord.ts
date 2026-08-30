@@ -54,21 +54,27 @@ export async function syncDiscordRoleForPromotion(discordId: string, newRank: Ra
 const PROMOTION_APPROVED_CHANNEL_ID = "1542487057316712504";
 
 export async function announcePromotionApproved({
+  promotedGameId,
   promotedDiscordId,
   approvedByDiscordId,
   fromRank,
   toRank,
+  reason,
 }: {
+  promotedGameId: string | null;
   promotedDiscordId: string;
   approvedByDiscordId: string;
   fromRank: Rank;
   toRank: Rank;
+  reason: string;
 }) {
   const content = [
+    `**ID:** ${promotedGameId ?? "n/a"}`,
     `<@${promotedDiscordId}>`,
     `**Previous rank:** ${formatRankLabel(fromRank)}`,
     `**Promoted rank:** ${formatRankLabel(toRank)}`,
-    `**Approved by:** <@${approvedByDiscordId}>`,
+    `**Reason:** ${reason}`,
+    `Promoted by: <@${approvedByDiscordId}>`,
   ].join("\n");
 
   const res = await fetch(`${DISCORD_API}/channels/${PROMOTION_APPROVED_CHANNEL_ID}/messages`, {
@@ -95,20 +101,28 @@ const PROMOTION_REQUEST_CHANNEL_ID = "1542487057782276167";
 
 export async function postPromotionRequestToDiscord({
   gameId,
+  discordId,
   fromRank,
   toRank,
   reason,
 }: {
+  // Requester's in-game ID from their website profile — resolved by the
+  // caller (via the requester's User row, matched on Discord account),
+  // never taken from free-typed text. Only shows "not set on profile"
+  // in the rare case the member genuinely has no gameId saved yet —
+  // it must never silently show "n/a" for a member who does have one.
   gameId: string | null;
+  discordId: string;
   fromRank: Rank;
   toRank: Rank;
   reason: string;
 }) {
   const content = [
-    `**ID:** ${gameId ?? "n/a"}`,
+    `**ID:** ${gameId ?? "not set on profile"}`,
     `**Current rank:** ${formatRankLabel(fromRank)}`,
     `**Requested rank:** ${formatRankLabel(toRank)}`,
     `**Reason:** ${reason}`,
+    `<@${discordId}>`,
   ].join("\n");
 
   const res = await fetch(`${DISCORD_API}/channels/${PROMOTION_REQUEST_CHANNEL_ID}/messages`, {
@@ -117,7 +131,7 @@ export async function postPromotionRequestToDiscord({
       Authorization: `Bot ${BOT_TOKEN}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
+    body: JSON.stringify({ content, allowed_mentions: { users: [discordId] } }),
   });
 
   if (!res.ok) {

@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
     select: {
       id: true,
       username: true,
+      discordId: true,
       discordAvatar: true,
       rank: true,
       isBlacklisted: true,

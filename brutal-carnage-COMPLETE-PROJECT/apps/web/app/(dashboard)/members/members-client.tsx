@@ -11,6 +11,7 @@ import { Rank } from "@prisma/client";
 interface Member {
   id: string;
   username: string;
+  discordId: string;
   discordAvatar: string | null;
   rank: Rank;
   isBlacklisted: boolean;
@@ -94,6 +95,7 @@ export function MembersClient({
           <thead className="bg-zinc-950/80 text-xs uppercase tracking-wider text-zinc-500">
             <tr>
               <th className="px-4 py-2 text-left">Member</th>
+              <th className="px-4 py-2 text-left">Discord ID</th>
               <th className="px-4 py-2 text-left">Rank</th>
               <th className="px-4 py-2 text-left">Status</th>
               <th className="px-4 py-2 text-left">Last active</th>
@@ -104,6 +106,19 @@ export function MembersClient({
             {filtered.map((m) => (
               <tr key={m.id} className="bg-zinc-950/40">
                 <td className="px-4 py-2 text-zinc-200">{m.username}</td>
+                <td className="px-4 py-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(m.discordId);
+                      toast.success("Discord ID copied");
+                    }}
+                    title="Click to copy"
+                    className="rounded border border-zinc-800 bg-zinc-900 px-2 py-0.5 font-mono text-xs text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
+                  >
+                    {m.discordId}
+                  </button>
+                </td>
                 <td className="px-4 py-2"><RankBadge rank={m.rank} /></td>
                 <td className="px-4 py-2">
                   {m.isBlacklisted ? (
@@ -129,7 +144,7 @@ export function MembersClient({
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-zinc-600">No members match those filters.</td>
+                <td colSpan={6} className="px-4 py-6 text-center text-zinc-600">No members match those filters.</td>
               </tr>
             )}
           </tbody>

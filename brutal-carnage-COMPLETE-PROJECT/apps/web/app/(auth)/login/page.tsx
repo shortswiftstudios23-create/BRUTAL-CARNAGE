@@ -1,6 +1,7 @@
 // app/(auth)/login/page.tsx
 import { signIn } from "@/lib/auth";
 import { AuthError } from "next-auth";
+import { LoginLogo } from "./login-logo";
 
 // Human-readable copy for every error code the sign-in action or
 // middleware can send this page.
@@ -42,6 +43,7 @@ export default function LoginPage({
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="w-full max-w-sm rounded-xl border border-neutral-800 bg-neutral-900 p-8">
+        <LoginLogo />
         <h1 className="mb-2 text-center text-2xl font-bold text-white">
           Brutal Carnage
         </h1>

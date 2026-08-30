@@ -12,10 +12,12 @@
 //   Requested Rank: Boss
 //   Reason: Why you think you deserve the promotion.
 //
-// The "Name" line is decorative (Discord already shows who posted it) —
-// what actually identifies the member is the "ID" line, matched against
-// User.gameId. "Prev Rank" as typed is just a sanity check; the
-// member's real current rank (from the DB) is always used as the
+// The "Name" line is decorative (Discord already shows who posted it),
+// and the typed "ID" line is a courtesy only — the member is actually
+// identified by the Discord account that posted the message (matched
+// against User.discordId), so a mistyped or spoofed ID can't misfile
+// the request. "Prev Rank" as typed is likewise just a sanity check;
+// the member's real current rank (from the DB) is always used as the
 // source of truth for fromRank.
 
 import { Events, Message, PartialMessage } from "discord.js";
@@ -26,10 +28,38 @@ export const name = Events.MessageCreate;
 
 const PROMOTION_REQUEST_CHANNEL_ID = "1542487057782276167";
 
+// Matches "Label: value" through to the end of the line. Used for
+// short single-line fields (rank labels, the optional typed ID).
 function parseField(content: string, label: string): string | null {
   const re = new RegExp(`^\\s*${label}\\s*:\\s*(.+)$`, "im");
   const match = content.match(re);
   return match ? match[1].trim() : null;
+}
+
+// The list of labels the template can contain, in the order they're
+// checked as "where does this field's value end". Reason is always
+// last in the template, but people don't always follow that — this
+// still finds whichever known label comes next (if any) so a
+// multi-line reason isn't cut off at the first newline the way a
+// single-line regex would cut it off.
+const KNOWN_LABELS = ["Name", "ID", "Prev Rank", "Current Rank", "Requested Rank", "Reason"];
+
+// Captures everything after "Reason:" up to the next known label (or
+// the end of the message), across as many lines as the person wrote —
+// so a long, multi-paragraph reason is captured in full instead of
+// being truncated to its first line.
+function parseReasonField(content: string): string | null {
+  const startMatch = content.match(/^\s*Reason\s*:\s*/im);
+  if (!startMatch || startMatch.index === undefined) return null;
+
+  const afterLabel = content.slice(startMatch.index + startMatch[0].length);
+  const otherLabels = KNOWN_LABELS.filter((l) => l.toLowerCase() !== "reason");
+  const nextLabelRe = new RegExp(`\\n\\s*(?:${otherLabels.join("|")})\\s*:`, "i");
+  const nextLabelMatch = afterLabel.match(nextLabelRe);
+
+  const raw = nextLabelMatch ? afterLabel.slice(0, nextLabelMatch.index) : afterLabel;
+  const trimmed = raw.trim();
+  return trimmed.length > 0 ? trimmed : null;
 }
 
 export async function execute(message: Message | PartialMessage) {
@@ -46,13 +76,12 @@ export async function execute(message: Message | PartialMessage) {
     }
 
     const content = message.content ?? "";
-    const idField = parseField(content, "ID");
     const requestedRankField = parseField(content, "Requested Rank");
-    const reasonField = parseField(content, "Reason");
+    const reasonField = parseReasonField(content);
 
     // Not a promotion-request-shaped message — leave it alone (people
     // also chat in this channel).
-    if (!idField || !requestedRankField || !reasonField) return;
+    if (!requestedRankField || !reasonField) return;
 
     const toRank = parseRankLabel(requestedRankField);
     if (!toRank) {
@@ -62,10 +91,17 @@ export async function execute(message: Message | PartialMessage) {
       return;
     }
 
-    const member = await prisma.user.findUnique({ where: { gameId: idField } });
+    // The member is identified by the Discord account that actually
+    // posted the message, never by an "ID:" line they typed — that
+    // typed line is decorative only, so it can't be spoofed or
+    // mistyped into pulling up the wrong profile.
+    const authorId = message.author?.id;
+    if (!authorId) return;
+
+    const member = await prisma.user.findUnique({ where: { discordId: authorId } });
     if (!member) {
       await message.reply(
-        `Couldn't find a member with ID \`${idField}\` on the website — make sure your account's game ID is set.`
+        `Couldn't find a website account linked to your Discord — make sure you've logged in on the site at least once.`
       );
       return;
     }
@@ -89,9 +125,18 @@ export async function execute(message: Message | PartialMessage) {
       },
     });
 
-    await message.reply(
-      `✅ Promotion request logged — ${formatRankLabel(member.rank)} → ${formatRankLabel(toRank)}. Synced to the website for review.`
-    );
+    // Post the canonical request format back into the channel — ID
+    // always pulled from the member's website profile (never n/a
+    // unless they genuinely haven't set one), the full reason text,
+    // and a mention of whoever submitted it.
+    const confirmation = [
+      `**ID:** ${member.gameId ?? "not set on profile"}`,
+      `**Current rank:** ${formatRankLabel(member.rank)}`,
+      `**Requested rank:** ${formatRankLabel(toRank)}`,
+      `**Reason:** ${reasonField}`,
+      `<@${authorId}>`,
+    ].join("\n");
+    await message.reply({ content: confirmation, allowedMentions: { users: [authorId] } });
 
     const reviewers = await prisma.user.findMany({
       where: {
