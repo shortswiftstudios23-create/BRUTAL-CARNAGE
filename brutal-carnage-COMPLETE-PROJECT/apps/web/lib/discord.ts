@@ -8,7 +8,7 @@
 
 import { RANK_TO_ROLE } from "./roleMap";
 import { Rank } from "@prisma/client";
-import { formatRankLabel } from "./rankLabels";
+import { formatRankLabel, buildServerNickname } from "./rankLabels";
 
 const DISCORD_API = "https://discord.com/api/v10";
 const GUILD_ID = process.env.DISCORD_GUILD_ID!;
@@ -16,8 +16,16 @@ const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN!;
 
 // Removes every mapped rank role the member currently holds and adds
 // only the new one, so a member never ends up holding two rank roles
-// after a website-initiated promotion.
-export async function syncDiscordRoleForPromotion(discordId: string, newRank: Rank) {
+// after a website-initiated promotion. Also updates their server
+// nickname to "Rank | Name | ID" (short rank form / trimmed name if
+// the full version would exceed Discord's 32-char nickname limit) —
+// same PATCH call as the role change, so it's one atomic update.
+export async function syncDiscordRoleForPromotion(
+  discordId: string,
+  newRank: Rank,
+  nameForNickname: string,
+  gameId: string | null
+) {
   const memberRes = await fetch(`${DISCORD_API}/guilds/${GUILD_ID}/members/${discordId}`, {
     headers: { Authorization: `Bot ${BOT_TOKEN}` },
   });
@@ -33,13 +41,15 @@ export async function syncDiscordRoleForPromotion(discordId: string, newRank: Ra
   const rolesToKeep = currentRoleIds.filter((id) => !allRankRoleIds.includes(id));
   const newRoleSet = [...rolesToKeep, RANK_TO_ROLE[newRank]];
 
+  const nick = gameId ? buildServerNickname(newRank, nameForNickname, gameId) : undefined;
+
   const patchRes = await fetch(`${DISCORD_API}/guilds/${GUILD_ID}/members/${discordId}`, {
     method: "PATCH",
     headers: {
       Authorization: `Bot ${BOT_TOKEN}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ roles: newRoleSet }),
+    body: JSON.stringify({ roles: newRoleSet, ...(nick ? { nick } : {}) }),
   });
 
   if (!patchRes.ok) {
@@ -54,14 +64,12 @@ export async function syncDiscordRoleForPromotion(discordId: string, newRank: Ra
 const PROMOTION_APPROVED_CHANNEL_ID = "1542487057316712504";
 
 export async function announcePromotionApproved({
-  promotedGameId,
   promotedDiscordId,
   approvedByDiscordId,
   fromRank,
   toRank,
   reason,
 }: {
-  promotedGameId: string | null;
   promotedDiscordId: string;
   approvedByDiscordId: string;
   fromRank: Rank;
@@ -69,7 +77,6 @@ export async function announcePromotionApproved({
   reason: string;
 }) {
   const content = [
-    `**ID:** ${promotedGameId ?? "n/a"}`,
     `<@${promotedDiscordId}>`,
     `**Previous rank:** ${formatRankLabel(fromRank)}`,
     `**Promoted rank:** ${formatRankLabel(toRank)}`,
@@ -77,17 +84,33 @@ export async function announcePromotionApproved({
     `Promoted by: <@${approvedByDiscordId}>`,
   ].join("\n");
 
-  const res = await fetch(`${DISCORD_API}/channels/${PROMOTION_APPROVED_CHANNEL_ID}/messages`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bot ${BOT_TOKEN}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ content, allowed_mentions: { users: [promotedDiscordId, approvedByDiscordId] } }),
+  const body = JSON.stringify({
+    content,
+    allowed_mentions: { users: [promotedDiscordId, approvedByDiscordId] },
   });
 
-  if (!res.ok) {
-    throw new Error(`Failed to announce promotion approval: ${res.status}`);
+  // Posted to BOTH the requests channel and the approvals channel, so
+  // whichever one someone is watching, they see the outcome — not just
+  // whichever channel happened to have the original request.
+  const results = await Promise.allSettled(
+    [PROMOTION_REQUEST_CHANNEL_ID, PROMOTION_APPROVED_CHANNEL_ID].map((channelId) =>
+      fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bot ${BOT_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body,
+      }).then((res) => {
+        if (!res.ok) throw new Error(`Discord ${res.status} for channel ${channelId}`);
+        return res;
+      })
+    )
+  );
+
+  const failures = results.filter((r) => r.status === "rejected");
+  if (failures.length > 0) {
+    throw new Error(`Failed to announce promotion approval in ${failures.length}/2 channels`);
   }
 }
 
@@ -100,29 +123,21 @@ export async function announcePromotionApproved({
 const PROMOTION_REQUEST_CHANNEL_ID = "1542487057782276167";
 
 export async function postPromotionRequestToDiscord({
-  gameId,
   discordId,
   fromRank,
   toRank,
   reason,
 }: {
-  // Requester's in-game ID from their website profile — resolved by the
-  // caller (via the requester's User row, matched on Discord account),
-  // never taken from free-typed text. Only shows "not set on profile"
-  // in the rare case the member genuinely has no gameId saved yet —
-  // it must never silently show "n/a" for a member who does have one.
-  gameId: string | null;
   discordId: string;
   fromRank: Rank;
   toRank: Rank;
   reason: string;
 }) {
   const content = [
-    `**ID:** ${gameId ?? "not set on profile"}`,
+    `<@${discordId}>`,
     `**Current rank:** ${formatRankLabel(fromRank)}`,
     `**Requested rank:** ${formatRankLabel(toRank)}`,
     `**Reason:** ${reason}`,
-    `<@${discordId}>`,
   ].join("\n");
 
   const res = await fetch(`${DISCORD_API}/channels/${PROMOTION_REQUEST_CHANNEL_ID}/messages`, {

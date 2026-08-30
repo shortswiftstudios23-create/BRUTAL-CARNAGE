@@ -76,19 +76,24 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     // Push to Discord LAST, outside the DB transaction. If this throws,
     // we catch below and revert the DB rank so it never drifts from
-    // Discord's actual role state.
-    await syncDiscordRoleForPromotion(request.user.discordId, request.toRank);
+    // Discord's actual role state. Also updates their server nickname
+    // to "Rank | Name | ID" so the promotion is reflected everywhere.
+    await syncDiscordRoleForPromotion(
+      request.user.discordId,
+      request.toRank,
+      request.user.gameName ?? request.user.username,
+      request.user.gameId
+    );
 
-    // Announce it in the promotion-approvals channel. Best-effort —
+    // Announce it in BOTH the requests and approvals channels. Best-effort —
     // the role change and DB state are already committed at this point,
     // so a Discord post failure here shouldn't roll anything back.
     await announcePromotionApproved({
-      promotedGameId: request.user.gameId,
       promotedDiscordId: request.user.discordId,
       approvedByDiscordId: session.user.discordId,
       fromRank: request.fromRank,
       toRank: request.toRank,
-      reason: request.reason,
+      reason: request.reason ?? "",
     }).catch((err) => console.error("[promotions] failed to announce approval", err));
 
     return NextResponse.json({ success: true });

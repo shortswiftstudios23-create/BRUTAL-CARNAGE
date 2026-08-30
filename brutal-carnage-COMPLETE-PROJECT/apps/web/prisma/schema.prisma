@@ -125,6 +125,12 @@ model User {
   gameId            String?  @unique
   createdManually   Boolean  @default(false)
 
+  // In-game display name as typed in the role-request channel (e.g.
+  // "Denver Jiii") — separate from `username`, which is the generated
+  // website login handle. Used to build the "Rank | Name | ID" server
+  // nickname on promotion and on initial role grant.
+  gameName          String?
+
   joinedFamilyAt    DateTime @default(now())
   lastActiveAt      DateTime @default(now())
 

@@ -124,6 +124,10 @@ model User {
   gameId            String?  @unique
   createdManually   Boolean  @default(false)
 
+  // In-game display name as typed in the role-request channel — see
+  // apps/web/prisma/schema.prisma for the full note. Keep in sync.
+  gameName          String?
+
   joinedFamilyAt    DateTime @default(now())
   lastActiveAt      DateTime @default(now())
 

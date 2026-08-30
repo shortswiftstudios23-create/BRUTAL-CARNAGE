@@ -1,5 +1,44 @@
-# Changes made in this pass
+# Changes made in this pass (round 2)
 
+## Nickname format on every role grant
+New helper `buildServerNickname(rank, name, gameId)`
+(`apps/web/lib/rankLabels.ts` / `bot/src/lib/nickname.ts`) builds
+`Rank | Name | ID` (e.g. `Cadet | Denver Jiii | 189119`), falling back
+to short rank codes (EM, BM, UD, Dep, BB, etc.) and finally trimming
+the name if the full string would exceed Discord's 32-character
+nickname limit. Added `User.gameName` (their typed in-game name,
+separate from the generated website login `username`) via a new
+migration to support this.
+
+## Promotion messages
+- Dropped the separate `**ID:**` line from both the request and the
+  approval messages — the member's server nickname (now always kept
+  in sync) already shows their ID whenever they're @mentioned, so it
+  was redundant.
+- On approval, the announcement now posts to **both**
+  `promotion-demotion` and `family-rank-request` (previously only the
+  approvals channel got a message; the request channel just sat there
+  with no resolution shown).
+- On approval, the bot also now sets the member's Discord role **and**
+  nickname in the same API call (`syncDiscordRoleForPromotion`).
+
+## New: role-request channel (`1542488940882305096`)
+New handler in `bot/src/events/messageCreate.ts` (`handleRoleRequest`)
+watches this channel for the `Name / ID / Rank / Proof` template
+(rank can be typed as `3 Cadet` or just `Cadet` — the leading number
+is stripped). On a valid request it:
+- Saves `gameId` + `gameName` to the member's account (refuses if that
+  ID is already claimed by someone else).
+- Assigns the matching Discord rank role and sets their nickname to
+  `Rank | Name | ID`.
+- Replies confirming what was applied.
+
+This reuses the existing role→DB rank sync (`guildMemberUpdate.ts`),
+so first-time role grants through this channel still trigger the
+normal website-credentials DM the same as a manual role assignment
+would.
+
+---
 Unzip this over your existing project folder (it only touches the files
 listed below — nothing else was moved or deleted).
 

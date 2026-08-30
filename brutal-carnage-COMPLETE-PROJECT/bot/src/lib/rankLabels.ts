@@ -18,6 +18,26 @@ export function formatRankLabel(rank: Rank): string {
     .join(" ");
 }
 
+// Short forms used for the "Rank | Name | ID" server nickname when the
+// full label + name + id would blow past Discord's 32-char nickname
+// limit. Kept short enough that even long names usually still fit.
+const SHORT_LABELS: Record<Rank, string> = {
+  NOOB: "Noob",
+  ROOKIE: "Rookie",
+  CADET: "Cadet",
+  TURFER: "Turfer",
+  EVENT_MANAGER: "EM",
+  BUSINESS_MANAGER: "BM",
+  UNDER_DEPUTY: "UD",
+  DEPUTY: "Dep",
+  BOSS: "Boss",
+  BIG_BOSS: "BB",
+};
+
+export function shortRankLabel(rank: Rank): string {
+  return SHORT_LABELS[rank];
+}
+
 const LABEL_TO_RANK: Record<string, Rank> = Object.fromEntries(
   ALL_RANKS.map((rank) => [formatRankLabel(rank).toLowerCase(), rank])
 );

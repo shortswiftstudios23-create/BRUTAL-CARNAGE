@@ -68,13 +68,8 @@ export async function POST(req: NextRequest) {
   // see every request there regardless of whether it was filed on the
   // website or typed directly into Discord. Best-effort — a Discord
   // hiccup shouldn't fail the request itself.
-  const requester = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { gameId: true, discordId: true },
-  });
   await postPromotionRequestToDiscord({
-    gameId: requester?.gameId ?? null,
-    discordId: requester?.discordId ?? session.user.discordId,
+    discordId: session.user.discordId,
     fromRank: session.user.rank,
     toRank: parsed.data.toRank,
     reason: parsed.data.reason,
