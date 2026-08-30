@@ -11,8 +11,9 @@ import { prisma } from "./prisma";
 import bcrypt from "bcryptjs";
 import { Rank } from "@prisma/client";
 import { authConfig } from "./auth.config";
+import { cache } from "react";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+const { handlers, auth: rawAuth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
@@ -90,3 +91,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
 });
+
+export { handlers, signIn, signOut };
+
+// The layout AND every page call auth() for the same incoming request
+// (layout needs the session for the sidebar, each page needs it again
+// for its own data + Topbar). Without this, that's the jwt() callback's
+// prisma.user.findUnique running twice per request. React's cache()
+// memoizes by request, so the second call reuses the first's result —
+// same DB round-trip count as if only one call happened.
+export const auth = cache(rawAuth);

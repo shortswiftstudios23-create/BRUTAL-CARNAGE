@@ -2,16 +2,11 @@
 import { auth } from "@/lib/auth";
 import { Sidebar } from "@/components/layout/sidebar";
 import { SidebarProvider } from "@/components/layout/sidebar-context";
-import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
-
-  const unreadCount = await prisma.notification.count({
-    where: { userId: session.user.id, read: false },
-  });
 
   return (
     <SidebarProvider>
