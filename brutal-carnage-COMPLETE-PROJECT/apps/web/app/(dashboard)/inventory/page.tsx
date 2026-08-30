@@ -20,7 +20,10 @@ export default async function InventoryPage() {
   ]);
 
   const totalWorth = items.reduce((sum, i) => sum + Number(i.suggestedPrice) * i.currentStock, 0);
-  const lowStockCount = items.filter((i) => i.currentStock <= 5).length;
+  const LOW_STOCK_THRESHOLD = 5;
+  const lowStockItems = items
+    .filter((i) => i.currentStock <= LOW_STOCK_THRESHOLD)
+    .sort((a, b) => a.currentStock - b.currentStock);
   const canSeeWorth = can(session!.user.rank, "canViewInventoryWorth");
 
   const formattedItems = items.map((i) => ({
@@ -41,8 +44,22 @@ export default async function InventoryPage() {
             <StatCard label="Total inventory worth" value={`$${totalWorth.toLocaleString()}`} icon={DollarSign} accent="success" />
           )}
           <StatCard label="Catalog items" value={items.length.toString()} icon={Package} />
-          <StatCard label="Low stock (≤5)" value={lowStockCount.toString()} icon={AlertTriangle} accent={lowStockCount > 0 ? "danger" : "neutral"} />
+          <StatCard label="Low stock (≤5)" value={lowStockItems.length.toString()} icon={AlertTriangle} accent={lowStockItems.length > 0 ? "danger" : "neutral"} />
         </div>
+
+        {lowStockItems.length > 0 && (
+          <Link
+            href="/inventory/all"
+            className="mb-6 block rounded-lg border border-amber-900/50 bg-amber-950/20 px-4 py-3 text-sm text-amber-300 hover:bg-amber-950/30"
+          >
+            <span className="font-medium">Running low:</span>{" "}
+            {lowStockItems
+              .slice(0, 8)
+              .map((i) => `${i.name} (${i.currentStock} left)`)
+              .join(", ")}
+            {lowStockItems.length > 8 && ` +${lowStockItems.length - 8} more`}
+          </Link>
+        )}
 
         {can(session!.user.rank, "canApprovePendingItems") && pendingCount > 0 && (
           <Link

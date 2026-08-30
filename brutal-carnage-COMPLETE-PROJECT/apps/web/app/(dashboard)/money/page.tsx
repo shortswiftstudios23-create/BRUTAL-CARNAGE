@@ -47,6 +47,7 @@ export default async function MoneyPage() {
   const [myLoan, personalExpenseAllowance] = await Promise.all([
     prisma.loan.findFirst({
       where: { userId: session!.user.id, status: { in: ["PENDING", "ACTIVE"] } },
+      include: { collateralItems: true },
     }),
     getPersonalExpenseAllowance(session!.user.id),
   ]);
@@ -75,6 +76,8 @@ export default async function MoneyPage() {
                 principal: Number(myLoan.principal),
                 amountOwed: Number(myLoan.amountOwed),
                 interestRate: Number(myLoan.interestRate),
+                dueAt: myLoan.dueAt?.toISOString() ?? null,
+                collateralItems: myLoan.collateralItems.map((c) => ({ id: c.id, itemName: c.itemName, quantity: c.quantity })),
               }}
             />
           )}

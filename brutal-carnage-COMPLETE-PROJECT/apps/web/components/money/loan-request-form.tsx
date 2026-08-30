@@ -10,6 +10,7 @@ import { toast } from "sonner";
 const formSchema = z.object({
   amount: z.coerce.number().positive("Enter an amount greater than 0"),
   reason: z.string().min(5, "Give a reason (at least 5 characters).").max(500),
+  collateralNames: z.string().max(300).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -35,10 +36,16 @@ export function LoanRequestForm() {
   async function onSubmit(values: FormValues) {
     setSubmitting(true);
     try {
+      const collateralItems = (values.collateralNames ?? "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((itemName) => ({ itemName, quantity: 1 }));
+
       const res = await fetch("/api/loans", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify({ amount: values.amount, reason: values.reason, collateralItems }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -93,6 +100,19 @@ export function LoanRequestForm() {
           className="w-full resize-none rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
         />
         {errors.reason && <p className="mt-1 text-xs text-red-500">{errors.reason.message}</p>}
+      </div>
+
+      <div>
+        <label className="mb-1.5 block text-xs uppercase tracking-wider text-zinc-500">
+          Items offered as collateral <span className="text-zinc-600">(optional)</span>
+        </label>
+        <input
+          type="text"
+          {...register("collateralNames")}
+          placeholder="e.g. Automatic Rod, Dangerous Razor"
+          className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+        />
+        <p className="mt-1 text-xs text-zinc-600">Comma-separated. Shown to the family on your loan record.</p>
       </div>
 
       <button

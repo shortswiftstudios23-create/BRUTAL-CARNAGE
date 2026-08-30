@@ -62,6 +62,18 @@ enum ItemActionType {
   ORDER
 }
 
+// Only meaningful on TAKE actions. PERSONAL = the member is taking the
+// item for themselves, so its value counts against them (deducted from
+// their net contribution on the leaderboard/performance page).
+// FOR_SALE = the item is being pulled to list on the marketplace on the
+// family's behalf (see ResaleListing.isFamilyStock) — stock still leaves
+// the warehouse, but it's a business action, not a personal withdrawal,
+// so it must NOT count against the member.
+enum ItemActionPurpose {
+  PERSONAL
+  FOR_SALE
+}
+
 enum EventStatus {
   SCHEDULED
   LIVE
@@ -187,6 +199,7 @@ model Item {
   wishlistedBy   WishlistItem[]
   soldInTransactions Transaction[]
   resaleListings ResaleListing[]
+  loanCollateralOf LoanCollateralItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -222,6 +235,11 @@ model ItemAction {
   quantity   Int
   status     ApprovalStatus @default(PENDING)
   note       String?
+
+  // Only set/relevant when type = TAKE. Defaults to PERSONAL so existing
+  // rows (and DONATE/ORDER rows, which ignore this field) behave exactly
+  // as before the field existed.
+  purpose    ItemActionPurpose @default(PERSONAL)
 
   reviewedById String?
   reviewedAt   DateTime?
@@ -343,12 +361,40 @@ model Loan {
   lastAccrualAt DateTime?
   paidAt        DateTime?
 
+  // When the loan is expected to be repaid by. Set at approval time
+  // (see /api/loans/[id]/review). Nullable for loans approved before
+  // this field existed, and while still PENDING.
+  dueAt         DateTime?
+
   createdAt DateTime @default(now())
 
-  repayments LoanRepayment[]
+  repayments      LoanRepayment[]
+  collateralItems LoanCollateralItem[]
 
   @@index([status])
   @@index([userId])
+}
+
+// Items a member hands over to the family in exchange for (or as
+// security against) a loan, instead of / in addition to cash repayment.
+// Shown on the member's performance/loan detail view so leadership can
+// see exactly what was put up as collateral for a given loan.
+model LoanCollateralItem {
+  id       String  @id @default(cuid())
+  loan     Loan    @relation(fields: [loanId], references: [id])
+  loanId   String
+
+  // Linked when the collateral is a real catalog item (so it can be
+  // valued consistently); itemName is kept regardless as a stable label
+  // even if the catalog item is later renamed or removed.
+  item     Item?   @relation(fields: [itemId], references: [id])
+  itemId   String?
+  itemName String
+  quantity Int     @default(1)
+
+  createdAt DateTime @default(now())
+
+  @@index([loanId])
 }
 
 model LoanRepayment {

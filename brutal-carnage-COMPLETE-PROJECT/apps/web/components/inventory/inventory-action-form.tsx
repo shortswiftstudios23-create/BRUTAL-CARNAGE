@@ -28,6 +28,7 @@ interface NewItemDraft {
 
 export function InventoryActionForm({ items, defaultType }: { items: Item[]; defaultType: "DONATE" | "TAKE" | "ORDER" }) {
   const [type, setType] = useState(defaultType);
+  const [purpose, setPurpose] = useState<"PERSONAL" | "FOR_SALE">("PERSONAL");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<SelectedExisting[]>([]);
   const [newItems, setNewItems] = useState<NewItemDraft[]>([]);
@@ -85,6 +86,7 @@ export function InventoryActionForm({ items, defaultType }: { items: Item[]; def
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type,
+          purpose: type === "TAKE" ? purpose : undefined,
           existingItems: selected.map((s) => ({ itemId: s.itemId, quantity: s.quantity })),
           newItems: validNewItems,
           note: note || undefined,
@@ -122,6 +124,34 @@ export function InventoryActionForm({ items, defaultType }: { items: Item[]; def
           </button>
         ))}
       </div>
+
+      {type === "TAKE" && (
+        <div className="mb-4 flex gap-2 rounded-md border border-panel-border bg-white/[0.02] p-1">
+          <button
+            onClick={() => setPurpose("PERSONAL")}
+            className={`flex-1 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
+              purpose === "PERSONAL" ? "bg-red-950/50 text-red-300 ring-1 ring-red-800" : "text-zinc-400 hover:bg-white/[0.04]"
+            }`}
+          >
+            Personal use
+          </button>
+          <button
+            onClick={() => setPurpose("FOR_SALE")}
+            className={`flex-1 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
+              purpose === "FOR_SALE" ? "bg-blue-950/50 text-blue-300 ring-1 ring-blue-800" : "text-zinc-400 hover:bg-white/[0.04]"
+            }`}
+          >
+            For sale (family stock)
+          </button>
+        </div>
+      )}
+      {type === "TAKE" && (
+        <p className="-mt-2 mb-4 text-xs text-zinc-600">
+          {purpose === "PERSONAL"
+            ? "Counts against your personal contribution total on the leaderboard."
+            : "Won't count against you — log this when you're pulling stock to list on the marketplace for the family."}
+        </p>
+      )}
 
       <input
         value={search}

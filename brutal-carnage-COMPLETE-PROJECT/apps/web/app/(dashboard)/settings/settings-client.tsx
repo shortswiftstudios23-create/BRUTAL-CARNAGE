@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { toast } from "sonner";
 import { Loader2, KeyRound, UserCog } from "lucide-react";
 
@@ -57,6 +58,30 @@ export function SettingsClient({
         toast.error(data.error?.formErrors?.[0] ?? data.error ?? "Couldn't update account");
         return;
       }
+
+      // The DB row is updated (username / mustChangePassword: false), but
+      // the session JWT in the browser's cookie is a snapshot from when
+      // they last logged in — it won't reflect that change on its own.
+      // Middleware reads that stale cookie and would keep bouncing them
+      // back to /settings forever ("stuck on the same page") even though
+      // they'd already changed their password. Silently signing back in
+      // with the new credentials issues a fresh JWT with the correct
+      // mustChangePassword: false, which is what actually breaks the loop.
+      const signInResult = await signIn("credentials", {
+        username: data.username,
+        password: newPassword || currentPassword,
+        redirect: false,
+      });
+
+      if (signInResult?.error) {
+        // Extremely unlikely (we just verified these credentials work
+        // server-side), but if it somehow fails, don't strand the user on
+        // a broken session — send them to log in fresh instead of looping.
+        toast.error("Account updated, but you'll need to log in again.");
+        router.push("/login");
+        return;
+      }
+
       toast.success("Account updated");
       setCurrentPassword("");
       setNewUsername("");

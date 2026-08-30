@@ -9,6 +9,12 @@ import { Search, Ban, ShieldCheck, StickyNote, Loader2, X, UserPlus, Copy, Check
 import { RankBadge } from "@/components/layout/rank-badge";
 import { Rank } from "@prisma/client";
 
+interface LoanStatusInfo {
+  status: "PENDING" | "ACTIVE";
+  amountOwed: number;
+  dueAt: string | null;
+}
+
 interface Member {
   id: string;
   username: string;
@@ -19,6 +25,11 @@ interface Member {
   lastActiveAt: string;
   joinedFamilyAt: string;
   isInactive: boolean;
+  moneyDonated?: number;
+  itemsDonatedValue?: number;
+  itemsTakenValue?: number;
+  moneyWithdrawn?: number;
+  loanStatus?: LoanStatusInfo | null;
 }
 
 interface Note {
@@ -40,6 +51,7 @@ export function MembersClient({
   canCreateMemberManually,
   canViewMemberPerformanceDetail,
   canResetMemberPassword,
+  canViewFinancials = false,
 }: {
   members: Member[];
   canManageBlacklist: boolean;
@@ -47,6 +59,7 @@ export function MembersClient({
   canCreateMemberManually: boolean;
   canViewMemberPerformanceDetail: boolean;
   canResetMemberPassword: boolean;
+  canViewFinancials?: boolean;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -113,6 +126,9 @@ export function MembersClient({
               <th className="px-4 py-2 text-left">Member</th>
               <th className="px-4 py-2 text-left">Rank</th>
               <th className="px-4 py-2 text-left">Status</th>
+              {canViewFinancials && <th className="px-4 py-2 text-right">Donated</th>}
+              {canViewFinancials && <th className="px-4 py-2 text-right">Received</th>}
+              {canViewFinancials && <th className="px-4 py-2 text-left">Loan</th>}
               <th className="px-4 py-2 text-left">Last active</th>
               <th className="px-4 py-2 text-right">Actions</th>
             </tr>
@@ -131,6 +147,39 @@ export function MembersClient({
                     <span className="rounded border border-panel-border bg-white/[0.03] px-2 py-0.5 text-xs text-zinc-400">Active</span>
                   )}
                 </td>
+                {canViewFinancials && (
+                  <td className="px-4 py-2 text-right">
+                    <p className="text-emerald-400">
+                      ${(( m.moneyDonated ?? 0) + (m.itemsDonatedValue ?? 0)).toLocaleString()}
+                    </p>
+                    {(m.itemsTakenValue ?? 0) > 0 && (
+                      <p className="text-xs text-red-500/80">-${(m.itemsTakenValue ?? 0).toLocaleString()} taken</p>
+                    )}
+                  </td>
+                )}
+                {canViewFinancials && (
+                  <td className="px-4 py-2 text-right text-zinc-400">
+                    ${(m.moneyWithdrawn ?? 0).toLocaleString()}
+                  </td>
+                )}
+                {canViewFinancials && (
+                  <td className="px-4 py-2">
+                    {m.loanStatus ? (
+                      <span
+                        className={`rounded border px-2 py-0.5 text-xs ${
+                          m.loanStatus.status === "ACTIVE"
+                            ? "border-red-900 bg-red-950/40 text-red-300"
+                            : "border-yellow-900 bg-yellow-950/40 text-yellow-300"
+                        }`}
+                        title={m.loanStatus.dueAt ? `Due ${new Date(m.loanStatus.dueAt).toLocaleDateString()}` : undefined}
+                      >
+                        {m.loanStatus.status === "ACTIVE" ? `Owes $${m.loanStatus.amountOwed.toLocaleString()}` : "Loan pending"}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-zinc-600">—</span>
+                    )}
+                  </td>
+                )}
                 <td className="px-4 py-2 text-zinc-500">{new Date(m.lastActiveAt).toLocaleDateString()}</td>
                 <td className="px-4 py-2 text-right">
                   <div className="flex items-center justify-end gap-2">
@@ -156,7 +205,7 @@ export function MembersClient({
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-zinc-600">No members match those filters.</td>
+                <td colSpan={canViewFinancials ? 8 : 5} className="px-4 py-6 text-center text-zinc-600">No members match those filters.</td>
               </tr>
             )}
           </tbody>

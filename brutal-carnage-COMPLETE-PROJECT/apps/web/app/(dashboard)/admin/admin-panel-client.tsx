@@ -54,6 +54,7 @@ interface PendingLoan {
   interestRate: number;
   reason: string | null;
   createdAt: string;
+  collateralItems?: { itemName: string; quantity: number }[];
 }
 
 function formatType(type: string) {
@@ -299,6 +300,11 @@ export function AdminPanelClient({
                 at {(l.interestRate * 100).toFixed(0)}% interest
               </p>
               {l.reason && <p className="text-xs text-zinc-500">"{l.reason}"</p>}
+              {l.collateralItems && l.collateralItems.length > 0 && (
+                <p className="text-xs text-zinc-500">
+                  Collateral offered: {l.collateralItems.map((c) => `${c.quantity}× ${c.itemName}`).join(", ")}
+                </p>
+              )}
             </Row>
           ))}
         </SectionShell>

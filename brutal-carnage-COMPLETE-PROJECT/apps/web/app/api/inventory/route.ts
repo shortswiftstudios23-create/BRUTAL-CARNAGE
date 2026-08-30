@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { type, existingItems, newItems, note, occurredAt } = parsed.data;
+  const { type, existingItems, newItems, note, occurredAt, purpose } = parsed.data;
 
   const result = await prisma.$transaction(async (tx) => {
     const createdActions = await Promise.all(
@@ -37,6 +37,9 @@ export async function POST(req: NextRequest) {
             note,
             status: "PENDING",
             occurredAt,
+            // Only TAKE actions carry a meaningful purpose; the schema
+            // defaults to PERSONAL for DONATE/ORDER rows anyway.
+            purpose: type === "TAKE" ? purpose ?? "PERSONAL" : undefined,
           },
         })
       )

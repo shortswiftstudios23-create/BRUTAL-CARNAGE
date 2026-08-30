@@ -45,11 +45,27 @@ export const reviewBankRequestSchema = z.object({
 export const createLoanSchema = z.object({
   amount: z.number().positive(),
   reason: z.string().min(5).max(500),
+  // Optional items the member is offering as security for the loan.
+  // Freeform name (not required to exist in the catalog) since a member
+  // may be offering something not yet cataloged.
+  collateralItems: z
+    .array(
+      z.object({
+        itemId: z.string().cuid().optional(),
+        itemName: z.string().min(1).max(80),
+        quantity: z.number().int().positive().default(1),
+      })
+    )
+    .max(20)
+    .default([]),
 });
 
 export const reviewLoanSchema = z.object({
   approve: z.boolean(),
   rejectionNote: z.string().max(300).optional(),
+  // Only used on approval — how many days from now the loan is due.
+  // Defaults to 14 in the review route if omitted.
+  dueInDays: z.number().int().positive().max(365).optional(),
 });
 
 export const repayLoanSchema = z.object({

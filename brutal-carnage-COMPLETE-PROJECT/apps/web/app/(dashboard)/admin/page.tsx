@@ -52,7 +52,7 @@ export default async function AdminPanelPage() {
         ? prisma.loan.findMany({
             where: { status: "PENDING" },
             orderBy: { createdAt: "desc" },
-            include: { user: { select: { username: true, rank: true } } },
+            include: { user: { select: { username: true, rank: true } }, collateralItems: true },
           })
         : Promise.resolve([]),
     ]);
@@ -111,6 +111,7 @@ export default async function AdminPanelPage() {
             interestRate: Number(l.interestRate),
             reason: l.reason,
             createdAt: l.createdAt.toISOString(),
+            collateralItems: l.collateralItems.map((c) => ({ itemName: c.itemName, quantity: c.quantity })),
           }))}
         />
       </main>

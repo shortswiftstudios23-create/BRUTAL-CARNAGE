@@ -116,7 +116,7 @@ export async function recomputePerformance() {
 // getMemberStats (which just returns totals), this returns row-level
 // detail so an admin can see exactly what someone gave/took and when.
 export async function getMemberDetailedHistory(userId: string) {
-  const [donations, withdrawals, itemActions, eventHistory] = await Promise.all([
+  const [donations, withdrawals, itemActions, eventHistory, loans] = await Promise.all([
     prisma.transaction.findMany({
       where: { userId, type: "DONATION", status: "APPROVED" },
       orderBy: { createdAt: "desc" },
@@ -130,14 +130,45 @@ export async function getMemberDetailedHistory(userId: string) {
     prisma.itemAction.findMany({
       where: { userId, status: "APPROVED" },
       orderBy: { createdAt: "desc" },
-      include: { item: { select: { name: true } } },
+      include: { item: { select: { name: true, suggestedPrice: true } } },
     }),
     prisma.eventRegistration.findMany({
       where: { userId },
       orderBy: { registeredAt: "desc" },
       include: { event: { select: { id: true, title: true, startsAt: true, result: true, status: true } } },
     }),
+    prisma.loan.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      include: {
+        repayments: { orderBy: { createdAt: "desc" } },
+        collateralItems: true,
+      },
+    }),
   ]);
+
+  const itemActionsMapped = itemActions.map((a) => ({
+    id: a.id,
+    type: a.type,
+    purpose: a.purpose,
+    itemName: a.item.name,
+    quantity: a.quantity,
+    value: Number(a.item.suggestedPrice) * a.quantity,
+    date: a.occurredAt ?? a.createdAt,
+  }));
+
+  const itemsDonatedValue = itemActionsMapped
+    .filter((a) => a.type === "DONATE")
+    .reduce((s, a) => s + a.value, 0);
+  // Only PERSONAL takes count as "taken from the family" — FOR_SALE
+  // takes are the member pulling stock to sell on the family's behalf,
+  // not a personal withdrawal. See lib/contributions.ts for the same rule.
+  const itemsTakenValue = itemActionsMapped
+    .filter((a) => a.type === "TAKE" && a.purpose === "PERSONAL")
+    .reduce((s, a) => s + a.value, 0);
+  const itemsTakenForSaleValue = itemActionsMapped
+    .filter((a) => a.type === "TAKE" && a.purpose === "FOR_SALE")
+    .reduce((s, a) => s + a.value, 0);
 
   return {
     donations: donations.map((d) => ({
@@ -152,13 +183,10 @@ export async function getMemberDetailedHistory(userId: string) {
       note: w.note,
       date: w.occurredAt ?? w.createdAt,
     })),
-    itemActions: itemActions.map((a) => ({
-      id: a.id,
-      type: a.type,
-      itemName: a.item.name,
-      quantity: a.quantity,
-      date: a.occurredAt ?? a.createdAt,
-    })),
+    itemActions: itemActionsMapped,
+    itemsDonatedValue,
+    itemsTakenValue,
+    itemsTakenForSaleValue,
     events: eventHistory.map((r) => ({
       eventId: r.event.id,
       title: r.event.title,
@@ -166,6 +194,20 @@ export async function getMemberDetailedHistory(userId: string) {
       result: r.event.result,
       registered: true,
       attended: r.attended,
+    })),
+    loans: loans.map((l) => ({
+      id: l.id,
+      status: l.status,
+      principal: Number(l.principal),
+      amountOwed: Number(l.amountOwed),
+      interestRate: Number(l.interestRate),
+      reason: l.reason,
+      createdAt: l.createdAt,
+      dueAt: l.dueAt,
+      paidAt: l.paidAt,
+      lastAccrualAt: l.lastAccrualAt,
+      repayments: l.repayments.map((r) => ({ id: r.id, amount: Number(r.amount), date: r.createdAt })),
+      collateralItems: l.collateralItems.map((c) => ({ id: c.id, itemName: c.itemName, quantity: c.quantity })),
     })),
   };
 }

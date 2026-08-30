@@ -67,6 +67,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     );
   }
 
+  const DEFAULT_DUE_DAYS = 14;
+  const dueInDays = parsed.data.dueInDays ?? DEFAULT_DUE_DAYS;
+  const dueAt = new Date(Date.now() + dueInDays * 24 * 60 * 60 * 1000);
+
   await prisma.$transaction(async (tx) => {
     await tx.loan.update({
       where: { id: loan.id },
@@ -75,6 +79,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         reviewedById: session.user.id,
         reviewedAt: new Date(),
         lastAccrualAt: new Date(), // interest starts compounding from now
+        dueAt,
       },
     });
 
@@ -85,7 +90,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         userId: loan.userId,
         type: "BANK",
         title: "Loan approved",
-        body: `Your loan of $${Number(loan.principal).toLocaleString()} was approved and paid out. Interest (12%) compounds every 5 days until repaid.`,
+        body: `Your loan of $${Number(loan.principal).toLocaleString()} was approved and paid out, due ${dueAt.toLocaleDateString()}. Interest (12%) compounds every 5 days until repaid.`,
       },
     });
 
