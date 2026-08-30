@@ -109,7 +109,24 @@ export async function GET(req: NextRequest) {
   }
 
   // --- Item catalog: batched instead of one upsert per item ---
-  const itemEntries = Object.entries(warehouseData.items) as [string, { suggestedPrice: number; currentStock: number }][];
+  const rawItemEntries = Object.entries(warehouseData.items) as [string, { suggestedPrice: number | null; currentStock: number }][];
+
+  // A few rows in the source spreadsheet have no price filled in
+  // (suggestedPrice: null). Rather than let those crash the whole
+  // batch, skip just those items — add them manually later once you
+  // know the price.
+  const skippedForMissingPrice = rawItemEntries.filter(([, info]) => info.suggestedPrice === null || info.suggestedPrice === undefined);
+  const itemEntries = rawItemEntries.filter(
+    ([, info]) => info.suggestedPrice !== null && info.suggestedPrice !== undefined
+  ) as [string, { suggestedPrice: number; currentStock: number }][];
+  if (skippedForMissingPrice.length) {
+    log.push(
+      `Skipped ${skippedForMissingPrice.length} item(s) with no suggestedPrice: ${skippedForMissingPrice
+        .map(([name]) => name)
+        .join(", ")}. Add these manually once you know the price.`
+    );
+  }
+
   const itemNames = itemEntries.map(([name]) => name);
 
   const existingItems = await prisma.item.findMany({ where: { name: { in: itemNames } } });
