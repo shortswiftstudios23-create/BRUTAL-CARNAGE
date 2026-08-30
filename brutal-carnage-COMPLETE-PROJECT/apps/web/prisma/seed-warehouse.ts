@@ -1,24 +1,33 @@
 // prisma/seed-warehouse.ts
 //
-// One-off import for the warehouse spreadsheet (final_warehouse.xlsx),
-// plus creation of the 3 admin accounts named in it:
-//   - DEADLY KHAN   (gameId 95900)   -> BIG_BOSS, full access
-//   - DEADLY MESBAH (gameId 256642)  -> BOSS, full access
-//   - DEADLY OCEAN  (gameId 255904)  -> BOSS, full access
+// One-off import for the warehouse spreadsheet (final_warehouse.xlsx).
+//
+// Deadly Mesbah and Deadly Ocean already have real accounts, provisioned
+// by the Discord bot when they joined the server — this script attaches
+// their gameId + rank + import history to THOSE existing accounts. It
+// never touches their existing username or password.
+//   - mesbahhasin233813  -> gameId 256642 (Deadly Mesbah) -> rank BOSS
+//   - stargamermj6063    -> gameId 255904 (Deadly Ocean)  -> rank BOSS
+//
+// Deadly Khan has no account yet, so this creates one fresh:
+//   - gameId 95900 -> rank BIG_BOSS
+//
+// If any of the usernames below have changed since this was written
+// (e.g. someone re-ran /settings and picked a new username), update the
+// EXISTING_ACCOUNT_USERNAMES map below before re-running.
 //
 // SAFE TO RE-RUN: every write is an upsert / existence-check, so running
 // this twice does not create duplicates or double-count history.
 //
-// SECURITY NOTE: this script does NOT hardcode any passwords. It
-// generates a fresh random temp password for each of the 3 accounts
-// (only if that account doesn't already exist) and prints it to the
-// terminal ONCE. Nothing is written to disk or logged anywhere else —
-// copy the 3 lines it prints and hand each person their own password
-// through a private channel, then they should change it immediately
-// under Settings (mustChangePassword already forces this on first
-// login).
+// SECURITY NOTE: this script does NOT hardcode any passwords. Only
+// Khan's brand-new account gets a generated temp password, printed to
+// the terminal ONCE. Nothing is written to disk or logged anywhere
+// else — copy it the moment it prints and hand it to Khan privately.
+// mustChangePassword forces them to set their own on first login.
 //
-// Run with:
+// Run with (against whichever database DATABASE_URL in apps/web/.env
+// points at — for your real data this needs to be the PRODUCTION
+// database, i.e. the same DATABASE_URL Vercel uses, not a local dev DB):
 //   cd apps/web
 //   npx tsx prisma/seed-warehouse.ts
 // (or `npx ts-node prisma/seed-warehouse.ts` if tsx isn't installed)
@@ -29,26 +38,50 @@ import warehouseData from "./seed-data/warehouse-import.json";
 
 const prisma = new PrismaClient();
 
-// gameId -> desired rank + username for the 3 named admins. Matched
-// against the "Player Name" values found in the spreadsheet's Put/Took
-// logs so this stays correct even if row order changes.
-const ADMIN_ACCOUNTS: Record<string, { username: string; rank: Rank }> = {
-  "95900": { username: "Deadly Khan", rank: "BIG_BOSS" },
-  "256642": { username: "Deadly Mesbah", rank: "BOSS" },
-  "255904": { username: "Deadly Ocean", rank: "BOSS" },
+// Existing bot-provisioned accounts to attach gameId + rank to, keyed by
+// their CURRENT username on the site. Update these if a username has
+// changed since.
+const EXISTING_ACCOUNT_USERNAMES: Record<string, { username: string; rank: Rank }> = {
+  "256642": { username: "mesbahhasin233813", rank: "BOSS" }, // Deadly Mesbah
+  "255904": { username: "stargamermj6063", rank: "BOSS" }, // Deadly Ocean
+};
+
+// Accounts that don't exist yet and need to be created from scratch.
+const NEW_ACCOUNTS: Record<string, { username: string; rank: Rank }> = {
+  "95900": { username: "Deadly Khan", rank: "BIG_BOSS" }, // Deadly Khan
 };
 
 async function ensureAdminAccounts() {
   const createdCredentials: { username: string; gameId: string; rank: string; tempPassword: string }[] = [];
 
-  for (const [gameId, { username, rank }] of Object.entries(ADMIN_ACCOUNTS)) {
-    const existing = await prisma.user.findUnique({ where: { gameId } });
-    if (existing) {
-      console.log(`- ${username} (gameId ${gameId}) already exists as an account — skipping creation, leaving password untouched.`);
-      // Still make sure their rank matches what was requested, in case
-      // this is being re-run after a rank change was intended.
-      if (existing.rank !== rank) {
-        await prisma.user.update({ where: { id: existing.id }, data: { rank } });
+  // Attach to existing accounts — never touch their username/password.
+  for (const [gameId, { username, rank }] of Object.entries(EXISTING_ACCOUNT_USERNAMES)) {
+    const existing = await prisma.user.findUnique({ where: { username } });
+    if (!existing) {
+      console.warn(
+        `! Couldn't find an existing account named "${username}" for gameId ${gameId}. ` +
+          `If their username has changed, update EXISTING_ACCOUNT_USERNAMES in this script and re-run.`
+      );
+      continue;
+    }
+    if (existing.gameId && existing.gameId !== gameId) {
+      console.warn(`! "${username}" already has a different gameId (${existing.gameId}) linked — leaving it as-is, not overwriting.`);
+      continue;
+    }
+    await prisma.user.update({
+      where: { id: existing.id },
+      data: { gameId, rank },
+    });
+    console.log(`- Linked gameId ${gameId} to existing account "${username}", rank set to ${rank}.`);
+  }
+
+  // Create brand-new accounts for anyone with no existing login yet.
+  for (const [gameId, { username, rank }] of Object.entries(NEW_ACCOUNTS)) {
+    const existingByGameId = await prisma.user.findUnique({ where: { gameId } });
+    if (existingByGameId) {
+      console.log(`- ${username} (gameId ${gameId}) already exists — skipping creation, leaving password untouched.`);
+      if (existingByGameId.rank !== rank) {
+        await prisma.user.update({ where: { id: existingByGameId.id }, data: { rank } });
         console.log(`  -> rank updated to ${rank}`);
       }
       continue;
@@ -56,13 +89,10 @@ async function ensureAdminAccounts() {
 
     const tempPassword = generateTempPassword();
     const passwordHash = await hashPassword(tempPassword);
-
-    // Username must be globally unique on this schema; fall back to
-    // appending the gameId if "Deadly Khan" etc. is somehow taken.
     const usernameTaken = await prisma.user.findUnique({ where: { username } });
     const finalUsername = usernameTaken ? `${username} (${gameId})` : username;
 
-    const user = await prisma.user.create({
+    await prisma.user.create({
       data: {
         username: finalUsername,
         gameId,
@@ -74,7 +104,7 @@ async function ensureAdminAccounts() {
       },
     });
 
-    createdCredentials.push({ username: user.username, gameId, rank, tempPassword });
+    createdCredentials.push({ username: finalUsername, gameId, rank, tempPassword });
   }
 
   if (createdCredentials.length > 0) {
@@ -82,7 +112,7 @@ async function ensureAdminAccounts() {
     for (const c of createdCredentials) {
       console.log(`${c.username}  |  rank: ${c.rank}  |  gameId: ${c.gameId}  |  temp password: ${c.tempPassword}`);
     }
-    console.log("Each of them must log in and set their own username/password under Settings — mustChangePassword is already set.");
+    console.log("They must log in and set their own username/password under Settings — mustChangePassword is already set.");
     console.log("===================================================================\n");
   }
 }
