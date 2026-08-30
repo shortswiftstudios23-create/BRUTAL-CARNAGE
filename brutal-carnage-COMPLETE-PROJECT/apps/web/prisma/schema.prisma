@@ -103,12 +103,29 @@ enum ResaleListingStatus {
 
 model User {
   id                String   @id @default(cuid())
+  // Nullable + no longer @unique at the DB level for real Discord ids only
+  // in spirit — manually-created accounts (see canCreateMemberManually)
+  // don't have a real Discord id yet, so they get a generated placeholder
+  // like "manual_<cuid>" here. Still unique so lookups/joins keep working;
+  // it just isn't guaranteed to be a *real* Discord snowflake until
+  // someone (the bot) links the account for real.
   discordId         String   @unique
-  username          String
+  username          String   @unique
   discordAvatar     String?
   email             String?  @unique
 
-  // Website credentials (set by bot on role-grant, hashed)
+  // In-game/warehouse identifier (e.g. the "Player ID" column in the
+  // warehouse spreadsheet). Separate from discordId/username since it's
+  // assigned by the game, not Discord or the website. Nullable — most
+  // accounts provisioned via the bot won't have this set.
+  gameId            String?  @unique
+
+  // True for accounts created by an admin via the manual create-member
+  // flow instead of the Discord bot's auto-provisioning on join.
+  createdManually   Boolean  @default(false)
+
+  // Website credentials (set by bot on role-grant, or by an admin for
+  // manually-created accounts; always hashed)
   passwordHash      String?
   mustChangePassword Boolean @default(true)
 

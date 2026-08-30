@@ -66,6 +66,28 @@ export const PERMISSIONS = {
   // screen. Gated to whoever can approve at least one thing (Business
   // Manager and up: admins, under deputy, deputy, boss, big boss).
   canAccessAdminPanel: (r: Rank) => isAtLeast(r, "BUSINESS_MANAGER"),
+
+  // Deputy+ can hand-create a member's ID/password instead of waiting
+  // for the Discord bot to auto-provision one on join. Kept separate
+  // from canManageBlacklist etc. even though the threshold matches
+  // today, so this can be tuned independently later.
+  canCreateMemberManually: (r: Rank) => isAtLeast(r, "DEPUTY"),
+
+  // Deputy+ view of every item ever added historically (not just
+  // current stock) with the ability to correct name/price.
+  canViewTotalItemsAdded: (r: Rank) => isAtLeast(r, "DEPUTY"),
+  canEditItemCatalog: (r: Rank) => isAtLeast(r, "DEPUTY"),
+
+  // Boss+ per-member performance drill-down: donation/withdrawal
+  // timeline and event history for any single member, not just your own.
+  canViewMemberPerformanceDetail: (r: Rank) => isAtLeast(r, "BOSS"),
+
+  // Event Manager+ already mark results (canMarkEventResult above); this
+  // is the narrower "see who registered vs who actually showed up"
+  // read-only view, and the extended 3-day post-start visibility window
+  // on the events list. Same threshold today, kept as its own key so it
+  // can be tuned independently of result-marking later.
+  canViewEventAttendance: (r: Rank) => isAtLeast(r, "EVENT_MANAGER"),
 } as const;
 
 export type PermissionKey = keyof typeof PERMISSIONS;

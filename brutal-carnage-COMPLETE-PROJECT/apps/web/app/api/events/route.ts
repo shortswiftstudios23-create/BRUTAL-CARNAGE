@@ -6,11 +6,33 @@ import { can } from "@/lib/permissions";
 import { createEventSchema } from "@/lib/validators/events";
 import { announceEvent } from "@/lib/discord";
 
+// How long a started event stays visible to Event Manager+ after it
+// begins — enough time to mark attendance and close it out. Regular
+// members never see it past its start time at all: to them it "deletes
+// itself" the moment startsAt passes, per the rule. Nothing is ever
+// actually deleted from the database — this only controls what the
+// events LIST returns; the rows themselves (and every registration /
+// attendance flag on them) live forever for monthly/yearly analysis via
+// the performance pages, which query the database directly and ignore
+// this visibility window entirely.
+const MANAGER_RETENTION_MS = 3 * 24 * 60 * 60 * 1000;
+
 export async function GET() {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const now = new Date();
+  const canSeePastWindow = can(session.user.rank, "canViewEventAttendance");
+
   const events = await prisma.event.findMany({
+    where: canSeePastWindow
+      ? // Event Manager+: anything upcoming, plus anything that started
+        // within the last 3 days (so attendance can still be marked).
+        { OR: [{ startsAt: { gt: now } }, { startsAt: { gte: new Date(now.getTime() - MANAGER_RETENTION_MS) } }] }
+      : // Everyone else: only events that haven't started yet. The instant
+        // startsAt passes, it drops off their list entirely — the record
+        // still exists, it's just not returned here.
+        { startsAt: { gt: now } },
     orderBy: { startsAt: "asc" },
     include: {
       _count: { select: { registrations: true } },

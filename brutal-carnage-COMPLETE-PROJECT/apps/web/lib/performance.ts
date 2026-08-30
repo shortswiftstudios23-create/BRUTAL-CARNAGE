@@ -110,6 +110,66 @@ export async function recomputePerformance() {
   return { membersScored: members.length, topDonorIds: Array.from(topDonorIds) };
 }
 
+// Full itemized history for the Boss+ per-member drill-down: every
+// donation/withdrawal with its date, and every event the member ever
+// registered for with whether they actually showed up. Unlike
+// getMemberStats (which just returns totals), this returns row-level
+// detail so an admin can see exactly what someone gave/took and when.
+export async function getMemberDetailedHistory(userId: string) {
+  const [donations, withdrawals, itemActions, eventHistory] = await Promise.all([
+    prisma.transaction.findMany({
+      where: { userId, type: "DONATION", status: "APPROVED" },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, finalAmount: true, note: true, createdAt: true, occurredAt: true },
+    }),
+    prisma.transaction.findMany({
+      where: { userId, type: "WITHDRAWAL", status: "APPROVED" },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, finalAmount: true, note: true, createdAt: true, occurredAt: true },
+    }),
+    prisma.itemAction.findMany({
+      where: { userId, status: "APPROVED" },
+      orderBy: { createdAt: "desc" },
+      include: { item: { select: { name: true } } },
+    }),
+    prisma.eventRegistration.findMany({
+      where: { userId },
+      orderBy: { registeredAt: "desc" },
+      include: { event: { select: { id: true, title: true, startsAt: true, result: true, status: true } } },
+    }),
+  ]);
+
+  return {
+    donations: donations.map((d) => ({
+      id: d.id,
+      amount: Number(d.finalAmount),
+      note: d.note,
+      date: d.occurredAt ?? d.createdAt,
+    })),
+    withdrawals: withdrawals.map((w) => ({
+      id: w.id,
+      amount: Number(w.finalAmount),
+      note: w.note,
+      date: w.occurredAt ?? w.createdAt,
+    })),
+    itemActions: itemActions.map((a) => ({
+      id: a.id,
+      type: a.type,
+      itemName: a.item.name,
+      quantity: a.quantity,
+      date: a.occurredAt ?? a.createdAt,
+    })),
+    events: eventHistory.map((r) => ({
+      eventId: r.event.id,
+      title: r.event.title,
+      startsAt: r.event.startsAt,
+      result: r.event.result,
+      registered: true,
+      attended: r.attended,
+    })),
+  };
+}
+
 export function isInactive(lastActiveAt: Date): boolean {
   const daysSince = (Date.now() - lastActiveAt.getTime()) / (1000 * 60 * 60 * 24);
   return daysSince >= INACTIVE_DAYS_THRESHOLD;

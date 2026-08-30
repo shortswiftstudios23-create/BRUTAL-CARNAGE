@@ -44,6 +44,8 @@ export default async function MembersPage() {
           }))}
           canManageBlacklist={can(session!.user.rank, "canManageBlacklist")}
           canViewPrivateNotes={can(session!.user.rank, "canViewPrivateNotes")}
+          canCreateMemberManually={can(session!.user.rank, "canCreateMemberManually")}
+          canViewMemberPerformanceDetail={can(session!.user.rank, "canViewMemberPerformanceDetail")}
         />
       </main>
     </>

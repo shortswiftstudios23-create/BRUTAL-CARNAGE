@@ -4,7 +4,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Search, Ban, ShieldCheck, StickyNote, Loader2, X } from "lucide-react";
+import Link from "next/link";
+import { Search, Ban, ShieldCheck, StickyNote, Loader2, X, UserPlus, Copy, Check, BarChart3 } from "lucide-react";
 import { RankBadge } from "@/components/layout/rank-badge";
 import { Rank } from "@prisma/client";
 
@@ -36,16 +37,21 @@ export function MembersClient({
   members,
   canManageBlacklist,
   canViewPrivateNotes,
+  canCreateMemberManually,
+  canViewMemberPerformanceDetail,
 }: {
   members: Member[];
   canManageBlacklist: boolean;
   canViewPrivateNotes: boolean;
+  canCreateMemberManually: boolean;
+  canViewMemberPerformanceDetail: boolean;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [rankFilter, setRankFilter] = useState<Rank | "ALL">("ALL");
   const [showBlacklistedOnly, setShowBlacklistedOnly] = useState(false);
   const [activeMember, setActiveMember] = useState<Member | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const filtered = useMemo(() => {
     return members.filter((m) => {
@@ -87,6 +93,15 @@ export function MembersClient({
           />
           Blacklisted only
         </label>
+        {canCreateMemberManually && (
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-red-800 bg-red-950/40 px-3 py-2 text-sm text-red-300 hover:bg-red-950/60"
+          >
+            <UserPlus className="h-4 w-4" />
+            Create member
+          </button>
+        )}
       </div>
 
       <div className="overflow-hidden rounded-lg border border-panel-border">
@@ -116,14 +131,24 @@ export function MembersClient({
                 </td>
                 <td className="px-4 py-2 text-zinc-500">{new Date(m.lastActiveAt).toLocaleDateString()}</td>
                 <td className="px-4 py-2 text-right">
-                  {(canManageBlacklist || canViewPrivateNotes) && (
-                    <button
-                      onClick={() => setActiveMember(m)}
-                      className="rounded-md border border-panel-border px-3 py-1 text-xs text-zinc-300 hover:bg-white/[0.04]"
-                    >
-                      Manage
-                    </button>
-                  )}
+                  <div className="flex items-center justify-end gap-2">
+                    {canViewMemberPerformanceDetail && (
+                      <Link
+                        href={`/performance/${m.id}`}
+                        className="flex items-center gap-1 rounded-md border border-panel-border px-3 py-1 text-xs text-zinc-300 hover:bg-white/[0.04]"
+                      >
+                        <BarChart3 className="h-3 w-3" /> Performance
+                      </Link>
+                    )}
+                    {(canManageBlacklist || canViewPrivateNotes) && (
+                      <button
+                        onClick={() => setActiveMember(m)}
+                        className="rounded-md border border-panel-border px-3 py-1 text-xs text-zinc-300 hover:bg-white/[0.04]"
+                      >
+                        Manage
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -145,6 +170,148 @@ export function MembersClient({
           onChanged={() => router.refresh()}
         />
       )}
+
+      {showCreateModal && (
+        <CreateMemberModal
+          onClose={() => setShowCreateModal(false)}
+          onCreated={() => router.refresh()}
+        />
+      )}
+    </div>
+  );
+}
+
+const CREATE_RANK_OPTIONS: Rank[] = RANK_OPTIONS;
+
+function CreateMemberModal({
+  onClose,
+  onCreated,
+}: {
+  onClose: () => void;
+  onCreated: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [username, setUsername] = useState("");
+  const [gameId, setGameId] = useState("");
+  const [rank, setRank] = useState<Rank>("NOOB");
+  const [result, setResult] = useState<{ username: string; tempPassword: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  async function submit() {
+    if (username.trim().length < 3) {
+      toast.error("Username must be at least 3 characters");
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin/create-member", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: username.trim(), rank, gameId: gameId.trim() || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error?.formErrors?.[0] ?? data.error ?? "Couldn't create member");
+        return;
+      }
+      setResult({ username: data.user.username, tempPassword: data.tempPassword });
+      onCreated();
+    } catch {
+      toast.error("Couldn't create member");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function copyCreds() {
+    if (!result) return;
+    await navigator.clipboard.writeText(`Username: ${result.username}\nPassword: ${result.tempPassword}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md rounded-lg border border-panel-border bg-panel p-5"
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-sm font-medium text-zinc-100">Create member</h3>
+          <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {result ? (
+          <div className="space-y-4">
+            <p className="text-xs text-amber-400">
+              This password is shown once and never stored — copy it now and hand it to the member directly.
+              They'll be required to change it on first login.
+            </p>
+            <div className="rounded-md border border-panel-border bg-white/[0.03] p-3 text-sm">
+              <p className="text-zinc-500">Username</p>
+              <p className="mb-2 text-zinc-100">{result.username}</p>
+              <p className="text-zinc-500">Temporary password</p>
+              <p className="font-mono text-zinc-100">{result.tempPassword}</p>
+            </div>
+            <button
+              onClick={copyCreds}
+              className="flex w-full items-center justify-center gap-2 rounded-md border border-panel-border py-2 text-sm text-zinc-300 hover:bg-white/[0.04]"
+            >
+              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {copied ? "Copied" : "Copy credentials"}
+            </button>
+            <button
+              onClick={onClose}
+              className="w-full rounded-md bg-red-800 py-2 text-sm text-white hover:bg-red-700"
+            >
+              Done
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div>
+              <label className="mb-1 block text-xs text-zinc-500">Username</label>
+              <input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="e.g. deadly_khan"
+                className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-zinc-500">Game ID (optional)</label>
+              <input
+                value={gameId}
+                onChange={(e) => setGameId(e.target.value)}
+                placeholder="e.g. 95900"
+                className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-zinc-500">Rank</label>
+              <select
+                value={rank}
+                onChange={(e) => setRank(e.target.value as Rank)}
+                className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+              >
+                {CREATE_RANK_OPTIONS.map((r) => (
+                  <option key={r} value={r}>{r.replace(/_/g, " ")}</option>
+                ))}
+              </select>
+            </div>
+            <button
+              onClick={submit}
+              disabled={busy}
+              className="flex w-full items-center justify-center gap-2 rounded-md bg-red-800 py-2 text-sm text-white hover:bg-red-700 disabled:opacity-50"
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+              Create + generate password
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

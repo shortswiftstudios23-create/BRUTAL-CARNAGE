@@ -43,6 +43,16 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/dashboard", nextUrl));
   }
 
+  // Force a password change before anything else for accounts still on
+  // a bot- or admin-issued temp password. /settings itself (and its own
+  // API route) must stay reachable or the redirect loops forever.
+  if (
+    session.user.mustChangePassword &&
+    !nextUrl.pathname.startsWith("/settings")
+  ) {
+    return NextResponse.redirect(new URL("/settings?forced=1", nextUrl));
+  }
+
   const matchedPrefix = Object.keys(ROUTE_PERMISSIONS)
     .sort((a, b) => b.length - a.length) // longest/most-specific match first
     .find((prefix) => nextUrl.pathname.startsWith(prefix));

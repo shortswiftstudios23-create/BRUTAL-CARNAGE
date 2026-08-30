@@ -98,6 +98,30 @@ account, check you get a DM with login details, log in on the website).
 
 ---
 
+## Step 9 — Import the warehouse spreadsheet + create the 3 admin accounts
+
+This is a one-time step, after Step 6 has run at least once (so the
+database tables exist). In the `apps/web` terminal:
+
+```
+npm run seed:warehouse
+```
+
+This creates the 3 accounts named in the spreadsheet — Deadly Khan
+(Big Boss), Deadly Mesbah (Boss), Deadly Ocean (Boss) — with full
+access, and prints each one's username + one-time temp password to
+the terminal. It also imports every donation and withdrawal row from
+the spreadsheet into their history, and sets current stock/prices from
+the Stock Reconciliation sheet.
+
+**Copy those 3 lines the moment they print** — that's the only time
+the passwords are shown anywhere. Hand each one to the right person
+privately. They'll be forced to set their own username and password
+the first time they log in (Settings page).
+
+Safe to re-run — it won't duplicate accounts, items, or history if run
+more than once.
+
 ## If something errors
 
 Copy the EXACT error message you see in the terminal and send it to

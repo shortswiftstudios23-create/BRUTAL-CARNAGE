@@ -124,7 +124,10 @@ export function Sidebar({
       </nav>
 
       <div className="relative border-t border-panel-border p-3">
-        <button className="group flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-white/[0.04]">
+        <Link
+          href="/settings"
+          className="group flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-white/[0.04]"
+        >
           <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-panel-border bg-white/[0.04] text-xs font-semibold text-zinc-300">
             {avatarUrl ? (
               <Image src={avatarUrl} alt={username} fill className="object-cover" sizes="36px" />
@@ -139,7 +142,7 @@ export function Sidebar({
             </p>
           </div>
           <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-zinc-600 transition-colors group-hover:text-zinc-400" />
-        </button>
+        </Link>
       </div>
     </aside>
   );

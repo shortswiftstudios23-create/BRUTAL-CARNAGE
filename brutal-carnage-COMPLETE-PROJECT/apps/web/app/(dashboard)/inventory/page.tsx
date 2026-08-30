@@ -94,6 +94,14 @@ export default async function InventoryPage() {
                 Pending items
               </Link>
             </div>
+            {can(session!.user.rank, "canViewTotalItemsAdded") && (
+              <Link
+                href="/inventory/totals"
+                className="mt-2 block rounded-md border border-panel-border py-2 text-center text-xs text-zinc-400 hover:bg-white/[0.04]"
+              >
+                Total items added (all-time)
+              </Link>
+            )}
           </div>
         </div>
       </main>
