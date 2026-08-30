@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { can, RANK_ORDER, rankLevel } from "@/lib/permissions";
 import { createPromotionRequestSchema } from "@/lib/validators/discipline";
 import { getMemberStats } from "@/lib/performance";
+import { postPromotionRequestToDiscord } from "@/lib/discord";
 
 export async function GET() {
   const session = await auth();
@@ -58,9 +59,25 @@ export async function POST(req: NextRequest) {
       userId: session.user.id,
       fromRank: session.user.rank,
       toRank: parsed.data.toRank,
+      reason: parsed.data.reason,
       statsSnapshot,
     },
   });
+
+  // Mirror it to the #promotion-requests Discord channel so reviewers
+  // see every request there regardless of whether it was filed on the
+  // website or typed directly into Discord. Best-effort — a Discord
+  // hiccup shouldn't fail the request itself.
+  const requester = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { gameId: true },
+  });
+  await postPromotionRequestToDiscord({
+    gameId: requester?.gameId ?? null,
+    fromRank: session.user.rank,
+    toRank: parsed.data.toRank,
+    reason: parsed.data.reason,
+  }).catch((err) => console.error("[promotions] failed to post request to Discord", err));
 
   // Notify everyone who can review it.
   const reviewers = await prisma.user.findMany({

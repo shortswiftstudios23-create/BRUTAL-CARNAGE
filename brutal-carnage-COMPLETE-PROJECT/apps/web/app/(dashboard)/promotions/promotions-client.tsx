@@ -15,6 +15,7 @@ interface Request {
   statsSnapshot: Record<string, unknown>;
   createdAt: string;
   isOwn: boolean;
+  reviewerCanApprove: boolean;
 }
 
 export function PromotionsClient({
@@ -32,23 +33,25 @@ export function PromotionsClient({
   const [submitting, setSubmitting] = useState(false);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [selectedRank, setSelectedRank] = useState(eligibleRanks[0] ?? "");
+  const [reason, setReason] = useState("");
 
   const hasPending = requests.some((r) => r.isOwn && r.status === "PENDING");
 
   async function submitRequest() {
-    if (!selectedRank) return;
+    if (!selectedRank || !reason.trim()) return;
     setSubmitting(true);
     try {
       const res = await fetch("/api/promotions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ toRank: selectedRank }),
+        body: JSON.stringify({ toRank: selectedRank, reason: reason.trim() }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
         throw new Error(data?.error ?? "Failed");
       }
       toast.success("Promotion request submitted");
+      setReason("");
       router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't submit the request");
@@ -82,7 +85,7 @@ export function PromotionsClient({
                 Anyone can request any rank above their own — pick the rank you're asking for.
                 Your current stats will be attached automatically.
               </p>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
                 <select
                   value={selectedRank}
                   onChange={(e) => setSelectedRank(e.target.value)}
@@ -95,10 +98,19 @@ export function PromotionsClient({
                     </option>
                   ))}
                 </select>
+                <textarea
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  disabled={submitting || hasPending}
+                  placeholder="Why do you deserve this promotion?"
+                  rows={2}
+                  maxLength={500}
+                  className="w-full flex-1 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800 disabled:opacity-50"
+                />
                 <button
                   onClick={submitRequest}
-                  disabled={submitting || hasPending}
-                  className="flex items-center justify-center gap-2 rounded-md bg-gradient-to-r from-red-800 to-red-700 px-4 py-2 text-sm font-medium text-zinc-100 shadow-[0_0_18px_-4px_rgba(220,38,38,0.5)] hover:shadow-[0_0_24px_-2px_rgba(220,38,38,0.7)] disabled:opacity-50"
+                  disabled={submitting || hasPending || !reason.trim()}
+                  className="flex shrink-0 items-center justify-center gap-2 rounded-md bg-gradient-to-r from-red-800 to-red-700 px-4 py-2 text-sm font-medium text-zinc-100 shadow-[0_0_18px_-4px_rgba(220,38,38,0.5)] hover:shadow-[0_0_24px_-2px_rgba(220,38,38,0.7)] disabled:opacity-50"
                 >
                   {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
                   <ArrowUpCircle className="h-4 w-4" />
@@ -139,11 +151,12 @@ export function PromotionsClient({
                   {"strikeCount" in r.statsSnapshot && <span>Strikes: {String(r.statsSnapshot.strikeCount)}</span>}
                 </div>
                 {canReview && r.status === "PENDING" && (
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
                       onClick={() => review(r.id, "approve")}
-                      disabled={reviewingId === r.id}
-                      className="flex items-center gap-1.5 rounded-md border border-green-800 px-3 py-1.5 text-xs text-green-300 hover:bg-green-950/30 disabled:opacity-50"
+                      disabled={reviewingId === r.id || !r.reviewerCanApprove}
+                      title={r.reviewerCanApprove ? undefined : "Your rank can't approve a promotion this high"}
+                      className="flex items-center gap-1.5 rounded-md border border-green-800 px-3 py-1.5 text-xs text-green-300 hover:bg-green-950/30 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <Check className="h-3.5 w-3.5" /> Approve
                     </button>
@@ -154,6 +167,9 @@ export function PromotionsClient({
                     >
                       <X className="h-3.5 w-3.5" /> Reject
                     </button>
+                    {!r.reviewerCanApprove && (
+                      <span className="text-[11px] text-zinc-600">Needs a higher rank to approve</span>
+                    )}
                   </div>
                 )}
               </li>

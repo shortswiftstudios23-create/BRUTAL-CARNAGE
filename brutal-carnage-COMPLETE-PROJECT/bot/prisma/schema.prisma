@@ -104,7 +104,7 @@ enum ResaleListingStatus {
 model User {
   id                String   @id @default(cuid())
   discordId         String   @unique
-  username          String
+  username          String   @unique
   discordAvatar     String?
   email             String?  @unique
 
@@ -115,6 +115,14 @@ model User {
   rank              Rank     @default(NOOB)
   isBlacklisted     Boolean  @default(false)
   blacklistReason   String?
+
+  // In-game player ID (warehouse import / manual account linkage) and
+  // whether this account was hand-created rather than bot-provisioned.
+  // messageCreate.ts matches an incoming Discord promotion-request
+  // template against this field — was missing here, which is why that
+  // listener could never actually find a member.
+  gameId            String?  @unique
+  createdManually   Boolean  @default(false)
 
   joinedFamilyAt    DateTime @default(now())
   lastActiveAt      DateTime @default(now())
@@ -481,6 +489,9 @@ model PromotionRequest {
   reviewedById  String?
   reviewedAt    DateTime?
   rejectionNote String?
+
+  reason           String?
+  discordMessageId String? @unique
 
   createdAt DateTime @default(now())
 

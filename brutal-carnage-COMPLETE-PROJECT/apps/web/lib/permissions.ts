@@ -74,3 +74,12 @@ export type PermissionKey = keyof typeof PERMISSIONS;
 export function can(rank: Rank, permission: PermissionKey): boolean {
   return PERMISSIONS[permission](rank);
 }
+
+// A reviewer can only approve a promotion to a rank strictly below
+// their own — e.g. a Deputy can't approve someone up to Deputy, Boss,
+// or Big Boss, and a Boss can't approve someone up to Big Boss. Big
+// Boss has nothing above it, so it can approve any promotion.
+export function canApprovePromotionTo(reviewerRank: Rank, toRank: Rank): boolean {
+  if (reviewerRank === "BIG_BOSS") return true;
+  return rankLevel(toRank) < rankLevel(reviewerRank);
+}

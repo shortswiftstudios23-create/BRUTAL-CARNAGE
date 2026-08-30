@@ -6,7 +6,7 @@ export const createPromotionRequestSchema = z.object({
     "ROOKIE", "CADET", "TURFER", "EVENT_MANAGER", "BUSINESS_MANAGER",
     "UNDER_DEPUTY", "DEPUTY", "BOSS", "BIG_BOSS",
   ]),
-  note: z.string().max(500).optional(),
+  reason: z.string().min(1, "Tell us why you deserve this promotion.").max(500),
 });
 
 export const reviewPromotionRequestSchema = z.object({

@@ -2,7 +2,7 @@
 import { Topbar } from "@/components/layout/topbar";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { can, RANK_ORDER, rankLevel } from "@/lib/permissions";
+import { can, canApprovePromotionTo, RANK_ORDER, rankLevel } from "@/lib/permissions";
 import { PromotionsClient } from "./promotions-client";
 
 export default async function PromotionsPage() {
@@ -37,6 +37,10 @@ export default async function PromotionsPage() {
             statsSnapshot: r.statsSnapshot as Record<string, unknown>,
             createdAt: r.createdAt.toISOString(),
             isOwn: r.userId === session!.user.id,
+            // Whether THIS reviewer is allowed to approve THIS specific
+            // request (a Deputy can't approve up to Deputy/Boss/Big Boss,
+            // a Boss can't approve up to Big Boss, etc).
+            reviewerCanApprove: canReview && canApprovePromotionTo(session!.user.rank, r.toRank),
           }))}
           canReview={canReview}
           canRequest={can(session!.user.rank, "canSubmitPromotionRequest")}

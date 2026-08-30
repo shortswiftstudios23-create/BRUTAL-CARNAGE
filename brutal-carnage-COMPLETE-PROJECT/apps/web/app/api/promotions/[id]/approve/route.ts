@@ -10,8 +10,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { can } from "@/lib/permissions";
-import { syncDiscordRoleForPromotion } from "@/lib/discord";
+import { can, canApprovePromotionTo } from "@/lib/permissions";
+import { syncDiscordRoleForPromotion, announcePromotionApproved } from "@/lib/discord";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await auth();
@@ -32,6 +32,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
   if (request.status !== "PENDING") {
     return NextResponse.json({ error: "Request already reviewed" }, { status: 409 });
+  }
+  if (!canApprovePromotionTo(session.user.rank, request.toRank)) {
+    return NextResponse.json(
+      { error: "Your rank isn't high enough to approve a promotion to that rank." },
+      { status: 403 }
+    );
   }
 
   try {
@@ -72,6 +78,16 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     // we catch below and revert the DB rank so it never drifts from
     // Discord's actual role state.
     await syncDiscordRoleForPromotion(request.user.discordId, request.toRank);
+
+    // Announce it in the promotion-approvals channel. Best-effort —
+    // the role change and DB state are already committed at this point,
+    // so a Discord post failure here shouldn't roll anything back.
+    await announcePromotionApproved({
+      promotedDiscordId: request.user.discordId,
+      approvedByDiscordId: session.user.discordId,
+      fromRank: request.fromRank,
+      toRank: request.toRank,
+    }).catch((err) => console.error("[promotions] failed to announce approval", err));
 
     return NextResponse.json({ success: true });
   } catch (err) {

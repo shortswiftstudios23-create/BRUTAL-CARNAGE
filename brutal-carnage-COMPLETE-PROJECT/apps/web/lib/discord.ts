@@ -8,6 +8,7 @@
 
 import { RANK_TO_ROLE } from "./roleMap";
 import { Rank } from "@prisma/client";
+import { formatRankLabel } from "./rankLabels";
 
 const DISCORD_API = "https://discord.com/api/v10";
 const GUILD_ID = process.env.DISCORD_GUILD_ID!;
@@ -43,6 +44,84 @@ export async function syncDiscordRoleForPromotion(discordId: string, newRank: Ra
 
   if (!patchRes.ok) {
     throw new Error(`Failed to update Discord roles for ${discordId}: ${patchRes.status}`);
+  }
+}
+
+// Posted to the promotion-approvals channel once a request is approved
+// and the Discord role swap above has already succeeded. Fixed pattern:
+// tag the promoted member, then their previous rank, then their new
+// rank, then tag whoever approved it.
+const PROMOTION_APPROVED_CHANNEL_ID = "1542487057316712504";
+
+export async function announcePromotionApproved({
+  promotedDiscordId,
+  approvedByDiscordId,
+  fromRank,
+  toRank,
+}: {
+  promotedDiscordId: string;
+  approvedByDiscordId: string;
+  fromRank: Rank;
+  toRank: Rank;
+}) {
+  const content = [
+    `<@${promotedDiscordId}>`,
+    `**Previous rank:** ${formatRankLabel(fromRank)}`,
+    `**Promoted rank:** ${formatRankLabel(toRank)}`,
+    `**Approved by:** <@${approvedByDiscordId}>`,
+  ].join("\n");
+
+  const res = await fetch(`${DISCORD_API}/channels/${PROMOTION_APPROVED_CHANNEL_ID}/messages`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bot ${BOT_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ content, allowed_mentions: { users: [promotedDiscordId, approvedByDiscordId] } }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to announce promotion approval: ${res.status}`);
+  }
+}
+
+// Posted to the promotion-requests channel whenever a request is
+// submitted from the website, so the same channel shows requests
+// regardless of which side (website or Discord) they were filed from.
+// (The reverse direction — someone typing the fixed template into this
+// same channel — is handled by the bot's messageCreate listener, which
+// writes the request straight into the DB.)
+const PROMOTION_REQUEST_CHANNEL_ID = "1542487057782276167";
+
+export async function postPromotionRequestToDiscord({
+  gameId,
+  fromRank,
+  toRank,
+  reason,
+}: {
+  gameId: string | null;
+  fromRank: Rank;
+  toRank: Rank;
+  reason: string;
+}) {
+  const content = [
+    `**ID:** ${gameId ?? "n/a"}`,
+    `**Current rank:** ${formatRankLabel(fromRank)}`,
+    `**Requested rank:** ${formatRankLabel(toRank)}`,
+    `**Reason:** ${reason}`,
+  ].join("\n");
+
+  const res = await fetch(`${DISCORD_API}/channels/${PROMOTION_REQUEST_CHANNEL_ID}/messages`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bot ${BOT_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to post promotion request to Discord: ${res.status}`);
   }
 }
 

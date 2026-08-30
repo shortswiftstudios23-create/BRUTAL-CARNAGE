@@ -6,6 +6,7 @@ import { Client, GatewayIntentBits, Partials } from "discord.js";
 import * as http from "http";
 import * as guildMemberAdd from "./events/guildMemberAdd";
 import * as guildMemberUpdate from "./events/guildMemberUpdate";
+import * as messageCreate from "./events/messageCreate";
 import * as messageReactionAdd from "./events/messageReactionAdd";
 import * as messageReactionRemove from "./events/messageReactionRemove";
 import { startEventReminderJob } from "./jobs/eventReminder";
@@ -124,6 +125,7 @@ client.once("ready", () => {
 
 client.on(guildMemberAdd.name, guildMemberAdd.execute);
 client.on(guildMemberUpdate.name, guildMemberUpdate.execute);
+client.on(messageCreate.name, messageCreate.execute);
 client.on(messageReactionAdd.name, messageReactionAdd.execute);
 client.on(messageReactionRemove.name, messageReactionRemove.execute);
 
