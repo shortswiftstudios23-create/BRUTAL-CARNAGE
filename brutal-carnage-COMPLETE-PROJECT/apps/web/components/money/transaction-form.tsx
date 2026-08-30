@@ -148,7 +148,7 @@ export function TransactionForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 rounded-lg border border-zinc-800 bg-zinc-950/60 p-5">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 rounded-lg border border-panel-border bg-panel/70 p-5">
       <div>
         <h2 className="mb-1 text-sm font-medium text-zinc-200">
           {mode === "give" ? "Give money to the family" : "Record money taken / spent"}
@@ -166,7 +166,7 @@ export function TransactionForm({
         </label>
         <select
           {...register("type")}
-          className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+          className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
         >
           {allowedTypes.map((value) => (
             <option key={value} value={value}>
@@ -184,7 +184,7 @@ export function TransactionForm({
             </label>
             <select
               {...register("soldItemId")}
-              className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+              className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
             >
               <option value="">Select item…</option>
               {items.map((item) => (
@@ -206,14 +206,14 @@ export function TransactionForm({
               min={1}
               {...register("soldQuantity")}
               placeholder="e.g. 200"
-              className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+              className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
             />
           </div>
         </div>
       )}
 
       {watchedType === "SOLD_ITEMS" && (
-        <div className="rounded-md border border-zinc-800 bg-zinc-900/50 p-3 text-xs text-zinc-500">
+        <div className="rounded-md border border-panel-border bg-white/[0.03] p-3 text-xs text-zinc-500">
           Logged as family income from an inventory sale — not counted as your personal donation on the leaderboard. Approving this also removes the sold quantity from stock.
         </div>
       )}
@@ -229,26 +229,26 @@ export function TransactionForm({
             step="0.01"
             {...register("amount")}
             placeholder="0.00"
-            className="w-full rounded-md border border-zinc-800 bg-zinc-900 py-2 pl-7 pr-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+            className="w-full rounded-md border border-panel-border bg-white/[0.03] py-2 pl-7 pr-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
           />
         </div>
         {errors.amount && <p className="mt-1 text-xs text-red-500">{errors.amount.message}</p>}
       </div>
 
       {watchedType === "DONATION" && (
-        <label className="flex items-center gap-2 rounded-md border border-zinc-800 bg-zinc-900/50 p-3 text-sm text-zinc-300">
+        <label className="flex items-center gap-2 rounded-md border border-panel-border bg-white/[0.03] p-3 text-sm text-zinc-300">
           <input
             type="checkbox"
             checked={keepTenPercent}
             onChange={(e) => setKeepTenPercent(e.target.checked)}
-            className="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-red-600 focus:ring-red-800"
+            className="h-4 w-4 rounded border-panel-border bg-white/[0.03] text-red-600 focus:ring-red-800"
           />
           Keep 10% for myself before donating the rest
         </label>
       )}
 
       {watchedType === "DONATION" && keepTenPercent && amountToDonate > 0 && (
-        <div className="rounded-md border border-zinc-800 bg-zinc-900/50 p-3 text-sm text-zinc-400">
+        <div className="rounded-md border border-panel-border bg-white/[0.03] p-3 text-sm text-zinc-400">
           <div className="flex items-center justify-between">
             <span>You keep (10%)</span>
             <span className="text-zinc-200">${keptAmount.toLocaleString()}</span>
@@ -266,7 +266,7 @@ export function TransactionForm({
         </label>
         <select
           {...register("daysAgo")}
-          className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+          className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
         >
           {backdateOptions().map((opt) => (
             <option key={opt.daysAgo} value={opt.daysAgo}>
@@ -284,7 +284,7 @@ export function TransactionForm({
         <textarea
           {...register("note")}
           rows={2}
-          className="w-full resize-none rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+          className="w-full resize-none rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
           placeholder="Add context for reviewers…"
         />
       </div>
@@ -311,7 +311,7 @@ export function TransactionForm({
       )}
 
       {breakdown && !TAXED_TYPES.includes(watchedType) && (
-        <div className="rounded-md border border-zinc-800 bg-zinc-900/50 p-3 text-sm text-zinc-400">
+        <div className="rounded-md border border-panel-border bg-white/[0.03] p-3 text-sm text-zinc-400">
           No tax applies to this category. Full amount: <span className="text-zinc-200">${breakdown.finalAmount.toLocaleString()}</span>
         </div>
       )}

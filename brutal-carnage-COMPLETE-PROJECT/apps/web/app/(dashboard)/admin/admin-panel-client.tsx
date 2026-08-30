@@ -77,7 +77,7 @@ function SectionShell({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-5">
+    <section className="rounded-lg border border-panel-border bg-panel/50 p-5">
       <div className="mb-4 flex items-center gap-2">
         <Icon className="h-4 w-4 text-red-400" />
         <h2 className="text-sm font-medium text-zinc-200">
@@ -105,7 +105,7 @@ function Row({
   rejectLabel?: string;
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-950/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 rounded-lg border border-panel-border bg-panel/70 p-4 sm:flex-row sm:items-center sm:justify-between">
       <div>{children}</div>
       <div className="flex shrink-0 gap-2">
         <button

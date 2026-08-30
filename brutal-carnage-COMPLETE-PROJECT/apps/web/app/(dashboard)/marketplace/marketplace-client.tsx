@@ -60,7 +60,7 @@ export function MarketplaceClient({
         </button>
       </div>
 
-      <div className="mb-5 flex gap-1 rounded-lg border border-zinc-800 bg-zinc-950/60 p-1 text-sm">
+      <div className="mb-5 flex gap-1 rounded-lg border border-panel-border bg-panel/70 p-1 text-sm">
         <button
           onClick={() => setTab("member")}
           className={`flex-1 rounded-md py-2 transition ${
@@ -145,7 +145,7 @@ function ListingCard({ listing, canManage }: { listing: Listing; canManage: bool
   return (
     <div
       className={`flex flex-col gap-3 rounded-lg border p-4 ${
-        listing.isFamilyStock ? "border-amber-900/50 bg-amber-950/10" : "border-zinc-800 bg-zinc-950/60"
+        listing.isFamilyStock ? "border-amber-900/50 bg-amber-950/10" : "border-panel-border bg-panel/70"
       }`}
     >
       <div>
@@ -163,7 +163,7 @@ function ListingCard({ listing, canManage }: { listing: Listing; canManage: bool
         <span className="text-xs text-zinc-500">× {listing.quantity}</span>
       </div>
 
-      <div className="flex items-center justify-between border-t border-zinc-800 pt-3">
+      <div className="flex items-center justify-between border-t border-panel-border pt-3">
         <div>
           <p className="text-xs text-zinc-500">Seller</p>
           <div className="mt-0.5 flex items-center gap-2">
@@ -175,7 +175,7 @@ function ListingCard({ listing, canManage }: { listing: Listing; canManage: bool
           href={`https://discord.com/users/${listing.seller.discordId}`}
           target="_blank"
           rel="noreferrer"
-          className="flex items-center gap-1.5 rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-900"
+          className="flex items-center gap-1.5 rounded-md border border-panel-border px-3 py-1.5 text-xs text-zinc-300 hover:bg-white/[0.04]"
         >
           <MessageCircle className="h-3.5 w-3.5" /> Contact to negotiate
         </a>
@@ -183,7 +183,7 @@ function ListingCard({ listing, canManage }: { listing: Listing; canManage: bool
       <p className="text-[11px] text-zinc-600">Discord: {listing.seller.discordId}</p>
 
       {canManage && (
-        <div className="flex gap-2 border-t border-zinc-800 pt-3">
+        <div className="flex gap-2 border-t border-panel-border pt-3">
           <button
             onClick={() => updateStatus("SOLD")}
             disabled={busy}
@@ -260,7 +260,7 @@ function ListingForm({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="w-full max-w-md rounded-lg border border-zinc-800 bg-zinc-950 p-6 shadow-2xl">
+      <div className="w-full max-w-md rounded-lg border border-panel-border bg-panel p-6 shadow-2xl">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="font-display text-lg tracking-wide text-zinc-100">List an item for sale</h2>
           <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300">
@@ -275,7 +275,7 @@ function ListingForm({
                 type="checkbox"
                 checked={isFamilyStock}
                 onChange={(e) => setIsFamilyStock(e.target.checked)}
-                className="h-4 w-4 rounded border-zinc-700 bg-zinc-900"
+                className="h-4 w-4 rounded border-panel-border bg-white/[0.03]"
               />
               List this from the family inventory (Deputy+/Boss/Big Boss only)
             </label>
@@ -291,7 +291,7 @@ function ListingForm({
                   const found = familyItems.find((i) => i.id === e.target.value);
                   if (found) setItemName(found.name);
                 }}
-                className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-amber-700"
+                className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-100 outline-none focus:border-amber-700"
               >
                 <option value="">None — custom listing</option>
                 {familyItems.map((i) => (
@@ -310,7 +310,7 @@ function ListingForm({
               value={itemName}
               onChange={(e) => setItemName(e.target.value)}
               placeholder="e.g. Weaponized Tampa"
-              className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-red-700"
+              className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-100 outline-none focus:border-red-700"
             />
           </div>
 
@@ -321,7 +321,7 @@ function ListingForm({
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
               placeholder="Condition, extras, pickup details…"
-              className="w-full resize-none rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-red-700"
+              className="w-full resize-none rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-100 outline-none focus:border-red-700"
             />
           </div>
 
@@ -336,7 +336,7 @@ function ListingForm({
                   value={askingPrice}
                   onChange={(e) => setAskingPrice(e.target.value)}
                   placeholder="0.00"
-                  className="w-full rounded-md border border-zinc-800 bg-zinc-900 py-2 pl-7 pr-3 text-sm text-zinc-100 outline-none focus:border-red-700"
+                  className="w-full rounded-md border border-panel-border bg-white/[0.03] py-2 pl-7 pr-3 text-sm text-zinc-100 outline-none focus:border-red-700"
                 />
               </div>
             </div>
@@ -347,7 +347,7 @@ function ListingForm({
                 min={1}
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
-                className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-red-700"
+                className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-100 outline-none focus:border-red-700"
               />
             </div>
           </div>
@@ -360,7 +360,7 @@ function ListingForm({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-md border border-zinc-800 py-2 text-sm text-zinc-400 hover:bg-zinc-900"
+              className="flex-1 rounded-md border border-panel-border py-2 text-sm text-zinc-400 hover:bg-white/[0.04]"
             >
               Cancel
             </button>

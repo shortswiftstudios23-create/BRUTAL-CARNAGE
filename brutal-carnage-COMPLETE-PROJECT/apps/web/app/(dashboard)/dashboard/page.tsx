@@ -152,7 +152,7 @@ export default async function DashboardPage() {
 
         <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
           {largeWidgets.includes("balance_chart") && (
-            <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-5 lg:col-span-2">
+            <div className="panel rounded-xl p-5 lg:col-span-2">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-sm font-medium text-zinc-200">Family balance — last 30 days</h2>
                 <Link href="/money/history" className="text-xs text-red-400 hover:text-red-300">
@@ -164,7 +164,7 @@ export default async function DashboardPage() {
           )}
 
           {largeWidgets.includes("upcoming_events") && (
-            <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-5">
+            <div className="panel rounded-xl p-5">
               <h2 className="mb-4 text-sm font-medium text-zinc-200">Upcoming events</h2>
               {upcomingEvents.length === 0 ? (
                 <p className="text-sm text-zinc-600">No events scheduled. Create one to rally the family.</p>
@@ -187,7 +187,7 @@ export default async function DashboardPage() {
               )}
               <Link
                 href="/events"
-                className="mt-4 block rounded-md border border-zinc-800 py-2 text-center text-xs text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
+                className="mt-4 block rounded-md border border-panel-border py-2 text-center text-xs text-zinc-400 transition-colors hover:border-crimson-dark/60 hover:bg-white/[0.04] hover:text-zinc-100"
               >
                 View all events
               </Link>
@@ -195,7 +195,7 @@ export default async function DashboardPage() {
           )}
 
           {largeWidgets.includes("pending_approvals") && (
-            <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-5">
+            <div className="panel rounded-xl p-5">
               <div className="mb-4 flex items-center gap-2">
                 <ClipboardCheck className="h-4 w-4 text-amber-400" />
                 <h2 className="text-sm font-medium text-zinc-200">Pending approvals</h2>
@@ -224,7 +224,7 @@ export default async function DashboardPage() {
           )}
 
           {largeWidgets.includes("leaderboard_preview") && (
-            <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-5">
+            <div className="panel rounded-xl p-5">
               <div className="mb-4 flex items-center gap-2">
                 <Trophy className="h-4 w-4 text-amber-400" />
                 <h2 className="text-sm font-medium text-zinc-200">Top contributors</h2>
@@ -248,7 +248,7 @@ export default async function DashboardPage() {
               </ul>
               <Link
                 href="/leaderboard"
-                className="mt-4 block rounded-md border border-zinc-800 py-2 text-center text-xs text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
+                className="mt-4 block rounded-md border border-panel-border py-2 text-center text-xs text-zinc-400 transition-colors hover:border-crimson-dark/60 hover:bg-white/[0.04] hover:text-zinc-100"
               >
                 Full leaderboard
               </Link>
@@ -256,7 +256,7 @@ export default async function DashboardPage() {
           )}
 
           {largeWidgets.includes("announcements_preview") && (
-            <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-5">
+            <div className="panel rounded-xl p-5">
               <div className="mb-4 flex items-center gap-2">
                 <Megaphone className="h-4 w-4 text-red-400" />
                 <h2 className="text-sm font-medium text-zinc-200">Pinned announcements</h2>
@@ -274,7 +274,7 @@ export default async function DashboardPage() {
               </ul>
               <Link
                 href="/announcements"
-                className="mt-4 block rounded-md border border-zinc-800 py-2 text-center text-xs text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
+                className="mt-4 block rounded-md border border-panel-border py-2 text-center text-xs text-zinc-400 transition-colors hover:border-crimson-dark/60 hover:bg-white/[0.04] hover:text-zinc-100"
               >
                 View all announcements
               </Link>
@@ -283,7 +283,7 @@ export default async function DashboardPage() {
         </div>
 
         {largeWidgets.includes("recent_activity") && (
-          <div className="mt-6 rounded-lg border border-zinc-800 bg-zinc-950/60 p-5">
+          <div className="mt-6 panel rounded-xl p-5">
             <h2 className="mb-4 text-sm font-medium text-zinc-200">Recent activity</h2>
             <ul className="divide-y divide-zinc-900">
               {recentActivity.map((log) => (

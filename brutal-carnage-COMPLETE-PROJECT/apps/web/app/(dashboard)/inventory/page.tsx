@@ -54,7 +54,7 @@ export default async function InventoryPage() {
         {can(session!.user.rank, "canApproveItemActions") && (
           <Link
             href="/admin"
-            className="mb-6 flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-950/60 px-4 py-3 text-sm text-zinc-400 hover:bg-zinc-900"
+            className="mb-6 flex items-center justify-between rounded-lg border border-panel-border bg-panel/70 px-4 py-3 text-sm text-zinc-400 hover:bg-white/[0.04]"
           >
             <span>Approve donate/take/order requests on existing items</span>
             <span>Open admin panel →</span>
@@ -66,7 +66,7 @@ export default async function InventoryPage() {
             <InventoryActionForm items={formattedItems} defaultType="DONATE" />
           </div>
 
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-5">
+          <div className="rounded-lg border border-panel-border bg-panel/70 p-5">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-sm font-medium text-zinc-200">Catalog snapshot</h2>
               <Link href="/inventory/all" className="text-xs text-red-400 hover:text-red-300">
@@ -84,13 +84,13 @@ export default async function InventoryPage() {
               ))}
             </ul>
             <div className="mt-4 flex gap-2">
-              <Link href="/inventory/all" className="flex-1 rounded-md border border-zinc-800 py-2 text-center text-xs text-zinc-400 hover:bg-zinc-900">
+              <Link href="/inventory/all" className="flex-1 rounded-md border border-panel-border py-2 text-center text-xs text-zinc-400 hover:bg-white/[0.04]">
                 All items
               </Link>
-              <Link href="/inventory/wishlist" className="flex-1 rounded-md border border-zinc-800 py-2 text-center text-xs text-zinc-400 hover:bg-zinc-900">
+              <Link href="/inventory/wishlist" className="flex-1 rounded-md border border-panel-border py-2 text-center text-xs text-zinc-400 hover:bg-white/[0.04]">
                 Wishlist
               </Link>
-              <Link href="/inventory/pending" className="flex-1 rounded-md border border-zinc-800 py-2 text-center text-xs text-zinc-400 hover:bg-zinc-900">
+              <Link href="/inventory/pending" className="flex-1 rounded-md border border-panel-border py-2 text-center text-xs text-zinc-400 hover:bg-white/[0.04]">
                 Pending items
               </Link>
             </div>

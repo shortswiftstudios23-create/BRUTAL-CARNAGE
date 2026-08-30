@@ -46,7 +46,7 @@ export default async function PerformancePage() {
           />
         </div>
 
-        <div className="mb-6 rounded-lg border border-zinc-800 bg-zinc-950/60 p-5">
+        <div className="mb-6 rounded-lg border border-panel-border bg-panel/70 p-5">
           <h2 className="mb-3 text-xs uppercase tracking-wider text-zinc-500">Badges earned</h2>
           {stats.badges.length === 0 ? (
             <p className="text-sm text-zinc-600">No badges yet — keep contributing and showing up to events.</p>

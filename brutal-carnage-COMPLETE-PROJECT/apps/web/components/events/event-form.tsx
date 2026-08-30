@@ -86,7 +86,7 @@ export function EventForm({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="w-full max-w-lg rounded-lg border border-zinc-800 bg-zinc-950 p-6 shadow-2xl">
+      <div className="w-full max-w-lg rounded-lg border border-panel-border bg-panel p-6 shadow-2xl">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="font-display text-lg tracking-wide text-zinc-100">{isEditing ? "Edit event" : "New event"}</h2>
           <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300">
@@ -100,7 +100,7 @@ export function EventForm({
             <input
               {...register("title")}
               placeholder="Turf war — Vinewood block"
-              className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-red-700"
+              className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-100 outline-none focus:border-red-700"
             />
             {errors.title && <p className="mt-1 text-xs text-red-400">{errors.title.message}</p>}
           </div>
@@ -111,7 +111,7 @@ export function EventForm({
               {...register("description")}
               rows={3}
               placeholder="What's happening, meet-up point, what to bring…"
-              className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-red-700"
+              className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-100 outline-none focus:border-red-700"
             />
             {errors.description && <p className="mt-1 text-xs text-red-400">{errors.description.message}</p>}
           </div>
@@ -122,7 +122,7 @@ export function EventForm({
               <input
                 type="datetime-local"
                 {...register("startsAt")}
-                className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-red-700"
+                className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-100 outline-none focus:border-red-700"
               />
               {errors.startsAt && <p className="mt-1 text-xs text-red-400">{errors.startsAt.message}</p>}
             </div>
@@ -131,7 +131,7 @@ export function EventForm({
               <input
                 {...register("location")}
                 placeholder="Sandy Shores"
-                className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-red-700"
+                className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-100 outline-none focus:border-red-700"
               />
             </div>
           </div>
@@ -141,7 +141,7 @@ export function EventForm({
               <label className="mb-1 block text-xs uppercase tracking-wider text-zinc-500">Event type</label>
               <select
                 {...register("eventType")}
-                className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-red-700"
+                className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-100 outline-none focus:border-red-700"
               >
                 <option value="">Select…</option>
                 {EVENT_TYPES.map((t) => (
@@ -161,14 +161,14 @@ export function EventForm({
                   step="0.01"
                   {...register("bonusAmount")}
                   placeholder="0.00"
-                  className="w-full rounded-md border border-zinc-800 bg-zinc-900 py-2 pl-7 pr-3 text-sm text-zinc-100 outline-none focus:border-red-700"
+                  className="w-full rounded-md border border-panel-border bg-white/[0.03] py-2 pl-7 pr-3 text-sm text-zinc-100 outline-none focus:border-red-700"
                 />
               </div>
             </div>
           </div>
 
           <label className="flex items-center gap-2 text-sm text-zinc-300">
-            <input type="checkbox" {...register("isGiveaway")} className="h-4 w-4 rounded border-zinc-700 bg-zinc-900" />
+            <input type="checkbox" {...register("isGiveaway")} className="h-4 w-4 rounded border-panel-border bg-white/[0.03]" />
             This is a family-only giveaway (no win/loss, draws a random winner)
           </label>
 
@@ -176,7 +176,7 @@ export function EventForm({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-md border border-zinc-800 py-2 text-sm text-zinc-400 hover:bg-zinc-900"
+              className="flex-1 rounded-md border border-panel-border py-2 text-sm text-zinc-400 hover:bg-white/[0.04]"
             >
               Cancel
             </button>

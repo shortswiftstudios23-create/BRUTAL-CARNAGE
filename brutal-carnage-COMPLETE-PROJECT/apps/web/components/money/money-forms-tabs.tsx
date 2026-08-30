@@ -18,7 +18,7 @@ export function MoneyFormsTabs({ items, hasActiveLoan = false }: { items: ItemOp
 
   return (
     <div>
-      <div className="mb-4 flex gap-2 rounded-lg border border-zinc-800 bg-zinc-950/40 p-1">
+      <div className="mb-4 flex gap-2 rounded-lg border border-panel-border bg-panel/50 p-1">
         <button
           onClick={() => setTab("give")}
           className={`flex flex-1 items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition-colors ${
@@ -45,17 +45,17 @@ export function MoneyFormsTabs({ items, hasActiveLoan = false }: { items: ItemOp
           {!hasActiveLoan && (
             <>
               <div className="flex items-center gap-3">
-                <div className="h-px flex-1 bg-zinc-800" />
+                <div className="h-px flex-1 bg-white/[0.04]" />
                 <span className="text-[11px] uppercase tracking-widest text-zinc-600">need it back? try a loan</span>
-                <div className="h-px flex-1 bg-zinc-800" />
+                <div className="h-px flex-1 bg-white/[0.04]" />
               </div>
               <LoanRequestForm />
             </>
           )}
           <div className="flex items-center gap-3">
-            <div className="h-px flex-1 bg-zinc-800" />
+            <div className="h-px flex-1 bg-white/[0.04]" />
             <span className="text-[11px] uppercase tracking-widest text-zinc-600">or just log it</span>
-            <div className="h-px flex-1 bg-zinc-800" />
+            <div className="h-px flex-1 bg-white/[0.04]" />
           </div>
           <TransactionForm items={items} mode="take" />
         </div>

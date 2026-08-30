@@ -110,7 +110,7 @@ export function NotificationBell({ initialUnreadCount }: { initialUnreadCount: n
     <div ref={ref} className="relative">
       <button
         onClick={toggleOpen}
-        className="relative rounded-md border border-zinc-800 p-2 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
+        className="relative rounded-md border border-panel-border p-2 text-zinc-400 hover:bg-white/[0.04] hover:text-zinc-200"
       >
         <Bell className="h-4 w-4" />
         {unreadCount > 0 && (
@@ -121,8 +121,8 @@ export function NotificationBell({ initialUnreadCount }: { initialUnreadCount: n
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-96 rounded-lg border border-zinc-800 bg-zinc-950 shadow-xl shadow-black/50">
-          <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+        <div className="absolute right-0 top-full z-50 mt-2 w-96 rounded-lg border border-panel-border bg-panel shadow-xl shadow-black/50">
+          <div className="flex items-center justify-between border-b border-panel-border px-4 py-3">
             <h3 className="text-sm font-medium text-zinc-200">Notifications</h3>
             {unreadCount > 0 && (
               <button
@@ -146,14 +146,14 @@ export function NotificationBell({ initialUnreadCount }: { initialUnreadCount: n
                     key={n.id}
                     onClick={() => handleClick(n)}
                     className={cn(
-                      "flex w-full gap-3 border-b border-zinc-900 px-4 py-3 text-left last:border-0 hover:bg-zinc-900",
+                      "flex w-full gap-3 border-b border-panel-border px-4 py-3 text-left last:border-0 hover:bg-white/[0.04]",
                       !n.read && "bg-red-950/10"
                     )}
                   >
                     <div
                       className={cn(
                         "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
-                        n.read ? "bg-zinc-900 text-zinc-500" : "bg-red-950/50 text-red-400"
+                        n.read ? "bg-white/[0.03] text-zinc-500" : "bg-red-950/50 text-red-400"
                       )}
                     >
                       <Icon className="h-3.5 w-3.5" />

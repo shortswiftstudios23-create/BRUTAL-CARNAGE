@@ -65,13 +65,13 @@ export function WishlistClient({ wishlist, items }: { wishlist: WishlistEntry[];
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-end gap-3 rounded-lg border border-zinc-800 bg-zinc-950/60 p-4">
+      <div className="mb-6 flex flex-wrap items-end gap-3 rounded-lg border border-panel-border bg-panel/70 p-4">
         <div className="flex-1">
           <label className="mb-1.5 block text-xs uppercase tracking-wider text-zinc-500">Item</label>
           <select
             value={selectedItemId}
             onChange={(e) => setSelectedItemId(e.target.value)}
-            className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+            className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
           >
             <option value="">Select item…</option>
             {items.map((i) => (
@@ -86,7 +86,7 @@ export function WishlistClient({ wishlist, items }: { wishlist: WishlistEntry[];
             min={1}
             value={quantity}
             onChange={(e) => setQuantity(Number(e.target.value))}
-            className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+            className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
           />
         </div>
         <button
@@ -100,14 +100,14 @@ export function WishlistClient({ wishlist, items }: { wishlist: WishlistEntry[];
 
       <div className="space-y-2">
         {wishlist.map((w) => (
-          <div key={w.id} className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-950/60 p-4">
+          <div key={w.id} className="flex items-center justify-between rounded-lg border border-panel-border bg-panel/70 p-4">
             <div>
               <p className="text-sm text-zinc-200">{w.name} × {w.quantity}</p>
               <p className="text-xs text-zinc-500">${w.suggestedPrice.toLocaleString()} each · {w.currentStock} currently in stock</p>
             </div>
             <button
               onClick={() => removeFromWishlist(w.itemId)}
-              className="rounded-md border border-zinc-800 p-2 text-zinc-500 hover:bg-zinc-900 hover:text-red-400"
+              className="rounded-md border border-panel-border p-2 text-zinc-500 hover:bg-white/[0.04] hover:text-red-400"
             >
               <Trash2 className="h-4 w-4" />
             </button>

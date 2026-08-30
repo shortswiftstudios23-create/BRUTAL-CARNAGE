@@ -69,7 +69,7 @@ export function MyLoanCard({ loan }: { loan: MyLoan }) {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="Repayment amount"
-            className="w-full rounded-md border border-zinc-800 bg-zinc-900 py-2 pl-7 pr-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+            className="w-full rounded-md border border-panel-border bg-white/[0.03] py-2 pl-7 pr-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
           />
         </div>
         <button

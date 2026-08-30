@@ -64,7 +64,7 @@ export function AllInventoryClient({ items }: { items: ItemRow[] }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search items or category…"
-            className="w-full rounded-md border border-zinc-800 bg-zinc-900 py-2 pl-9 pr-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+            className="w-full rounded-md border border-panel-border bg-white/[0.03] py-2 pl-9 pr-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
           />
         </div>
         <p className="text-xs text-zinc-500">
@@ -72,9 +72,9 @@ export function AllInventoryClient({ items }: { items: ItemRow[] }) {
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-zinc-800">
+      <div className="overflow-hidden rounded-lg border border-panel-border">
         <table className="w-full text-sm">
-          <thead className="bg-zinc-950/80 text-xs uppercase tracking-wider text-zinc-500">
+          <thead className="bg-panel/90 text-xs uppercase tracking-wider text-zinc-500">
             <tr>
               <SortableHeader label="Item" active={sortKey === "name"} dir={sortDir} onClick={() => toggleSort("name")} />
               <th className="px-4 py-2 text-left">Category</th>
@@ -85,7 +85,7 @@ export function AllInventoryClient({ items }: { items: ItemRow[] }) {
           </thead>
           <tbody className="divide-y divide-zinc-800">
             {filtered.map((item) => (
-              <tr key={item.id} className="bg-zinc-950/40">
+              <tr key={item.id} className="bg-panel/50">
                 <td className="px-4 py-2 text-zinc-200">{item.name}</td>
                 <td className="px-4 py-2 text-zinc-500">{item.category ?? "—"}</td>
                 <td className={`px-4 py-2 text-right ${item.currentStock <= 5 ? "text-red-400" : "text-zinc-300"}`}>

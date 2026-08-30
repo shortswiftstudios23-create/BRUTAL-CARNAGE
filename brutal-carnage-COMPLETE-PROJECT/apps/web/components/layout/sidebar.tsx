@@ -125,7 +125,7 @@ export function Sidebar({
 
       <div className="relative border-t border-panel-border p-3">
         <button className="group flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-white/[0.04]">
-          <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-panel-border bg-zinc-800 text-xs font-semibold text-zinc-300">
+          <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-panel-border bg-white/[0.04] text-xs font-semibold text-zinc-300">
             {avatarUrl ? (
               <Image src={avatarUrl} alt={username} fill className="object-cover" sizes="36px" />
             ) : (

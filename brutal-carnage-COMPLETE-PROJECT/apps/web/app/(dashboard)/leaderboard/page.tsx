@@ -61,8 +61,8 @@ export default async function LeaderboardPage() {
     <>
       <Topbar pageTitle="Leaderboard" notificationCount={unreadCount} />
       <main className="flex-1 overflow-y-auto p-6">
-        <div className="rounded-lg border border-zinc-800 bg-zinc-950/60">
-          <div className="border-b border-zinc-800 px-5 py-4">
+        <div className="rounded-lg border border-panel-border bg-panel/70">
+          <div className="border-b border-panel-border px-5 py-4">
             <h1 className="flex items-center gap-2 font-display text-lg tracking-wide text-zinc-100">
               <Trophy className="h-4 w-4 text-amber-400" />
               Top contributors

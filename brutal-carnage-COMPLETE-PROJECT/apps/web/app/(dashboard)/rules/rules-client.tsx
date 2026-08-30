@@ -73,7 +73,7 @@ export function RulesClient({ canEdit, initialRules }: { canEdit: boolean; initi
             {editing && (
               <button
                 onClick={addRule}
-                className="flex items-center gap-1.5 rounded-md border border-zinc-800 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-900"
+                className="flex items-center gap-1.5 rounded-md border border-panel-border px-3 py-1.5 text-xs text-zinc-300 hover:bg-white/[0.04]"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Add rule
@@ -92,7 +92,7 @@ export function RulesClient({ canEdit, initialRules }: { canEdit: boolean; initi
       </div>
 
       {rules.length === 0 && !editing && (
-        <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-10 text-center text-sm text-zinc-600">
+        <div className="rounded-lg border border-panel-border bg-panel/70 p-10 text-center text-sm text-zinc-600">
           No rules published yet.
         </div>
       )}
@@ -105,7 +105,7 @@ export function RulesClient({ canEdit, initialRules }: { canEdit: boolean; initi
             onDragStart={() => setDragIndex(i)}
             onDragOver={(e) => e.preventDefault()}
             onDrop={() => onDrop(i)}
-            className="flex gap-3 rounded-lg border border-zinc-800 bg-zinc-950/60 p-4"
+            className="flex gap-3 rounded-lg border border-panel-border bg-panel/70 p-4"
           >
             {editing && <GripVertical className="mt-1 h-4 w-4 shrink-0 cursor-grab text-zinc-600" />}
             <span className="mt-0.5 shrink-0 font-display text-sm text-red-400">{i + 1}.</span>
@@ -115,13 +115,13 @@ export function RulesClient({ canEdit, initialRules }: { canEdit: boolean; initi
                   <input
                     value={rule.title}
                     onChange={(e) => update(i, { title: e.target.value })}
-                    className="mb-2 w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1 text-sm font-medium text-zinc-100 focus:border-red-800 focus:outline-none"
+                    className="mb-2 w-full rounded-md border border-panel-border bg-white/[0.03] px-2 py-1 text-sm font-medium text-zinc-100 focus:border-red-800 focus:outline-none"
                   />
                   <textarea
                     value={rule.content}
                     onChange={(e) => update(i, { content: e.target.value })}
                     rows={2}
-                    className="w-full resize-none rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1 text-sm text-zinc-400 focus:border-red-800 focus:outline-none"
+                    className="w-full resize-none rounded-md border border-panel-border bg-white/[0.03] px-2 py-1 text-sm text-zinc-400 focus:border-red-800 focus:outline-none"
                   />
                 </>
               ) : (

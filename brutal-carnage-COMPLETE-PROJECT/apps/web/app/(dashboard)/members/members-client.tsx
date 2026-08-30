@@ -65,13 +65,13 @@ export function MembersClient({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search members…"
-            className="w-full rounded-md border border-zinc-800 bg-zinc-900 py-2 pl-9 pr-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+            className="w-full rounded-md border border-panel-border bg-white/[0.03] py-2 pl-9 pr-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
           />
         </div>
         <select
           value={rankFilter}
           onChange={(e) => setRankFilter(e.target.value as Rank | "ALL")}
-          className="rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+          className="rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
         >
           <option value="ALL">All ranks</option>
           {RANK_OPTIONS.map((r) => (
@@ -83,15 +83,15 @@ export function MembersClient({
             type="checkbox"
             checked={showBlacklistedOnly}
             onChange={(e) => setShowBlacklistedOnly(e.target.checked)}
-            className="rounded border-zinc-700 bg-zinc-900"
+            className="rounded border-panel-border bg-white/[0.03]"
           />
           Blacklisted only
         </label>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-zinc-800">
+      <div className="overflow-hidden rounded-lg border border-panel-border">
         <table className="w-full text-sm">
-          <thead className="bg-zinc-950/80 text-xs uppercase tracking-wider text-zinc-500">
+          <thead className="bg-panel/90 text-xs uppercase tracking-wider text-zinc-500">
             <tr>
               <th className="px-4 py-2 text-left">Member</th>
               <th className="px-4 py-2 text-left">Rank</th>
@@ -102,7 +102,7 @@ export function MembersClient({
           </thead>
           <tbody className="divide-y divide-zinc-800">
             {filtered.map((m) => (
-              <tr key={m.id} className="bg-zinc-950/40">
+              <tr key={m.id} className="bg-panel/50">
                 <td className="px-4 py-2 text-zinc-200">{m.username}</td>
                 <td className="px-4 py-2"><RankBadge rank={m.rank} /></td>
                 <td className="px-4 py-2">
@@ -111,7 +111,7 @@ export function MembersClient({
                   ) : m.isInactive ? (
                     <span className="rounded border border-amber-800 bg-amber-950/40 px-2 py-0.5 text-xs text-amber-300">Inactive</span>
                   ) : (
-                    <span className="rounded border border-zinc-700 bg-zinc-900 px-2 py-0.5 text-xs text-zinc-400">Active</span>
+                    <span className="rounded border border-panel-border bg-white/[0.03] px-2 py-0.5 text-xs text-zinc-400">Active</span>
                   )}
                 </td>
                 <td className="px-4 py-2 text-zinc-500">{new Date(m.lastActiveAt).toLocaleDateString()}</td>
@@ -119,7 +119,7 @@ export function MembersClient({
                   {(canManageBlacklist || canViewPrivateNotes) && (
                     <button
                       onClick={() => setActiveMember(m)}
-                      className="rounded-md border border-zinc-700 px-3 py-1 text-xs text-zinc-300 hover:bg-zinc-900"
+                      className="rounded-md border border-panel-border px-3 py-1 text-xs text-zinc-300 hover:bg-white/[0.04]"
                     >
                       Manage
                     </button>
@@ -233,7 +233,7 @@ function MemberModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-lg border border-zinc-800 bg-zinc-950 p-5"
+        className="w-full max-w-md rounded-lg border border-panel-border bg-panel p-5"
       >
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-sm font-medium text-zinc-100">{member.username}</h3>
@@ -243,7 +243,7 @@ function MemberModal({
         </div>
 
         {canManageBlacklist && (
-          <div className="mb-5 space-y-2 border-b border-zinc-800 pb-5">
+          <div className="mb-5 space-y-2 border-b border-panel-border pb-5">
             {member.isBlacklisted ? (
               <>
                 <p className="text-xs text-zinc-500">Blacklisted: {member.blacklistReason || "no reason given"}</p>
@@ -262,7 +262,7 @@ function MemberModal({
                   value={blacklistReason}
                   onChange={(e) => setBlacklistReason(e.target.value)}
                   placeholder="Reason for blacklisting…"
-                  className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+                  className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
                 />
                 <button
                   onClick={() => toggleBlacklist(true)}
@@ -294,7 +294,7 @@ function MemberModal({
 
             <div className="mb-3 max-h-40 space-y-2 overflow-y-auto">
               {notes?.map((n) => (
-                <div key={n.id} className="rounded-md border border-zinc-800 bg-zinc-900/50 p-2 text-xs">
+                <div key={n.id} className="rounded-md border border-panel-border bg-white/[0.03] p-2 text-xs">
                   <p className="text-zinc-300">{n.content}</p>
                   <p className="mt-1 text-zinc-600">— {n.author.username}, {new Date(n.createdAt).toLocaleDateString()}</p>
                 </div>
@@ -307,12 +307,12 @@ function MemberModal({
                 value={newNote}
                 onChange={(e) => setNewNote(e.target.value)}
                 placeholder="Add a private note…"
-                className="flex-1 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+                className="flex-1 rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-xs text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
               />
               <button
                 onClick={addNote}
                 disabled={busy}
-                className="rounded-md border border-zinc-700 px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-900 disabled:opacity-50"
+                className="rounded-md border border-panel-border px-3 py-2 text-xs text-zinc-300 hover:bg-white/[0.04] disabled:opacity-50"
               >
                 Add
               </button>

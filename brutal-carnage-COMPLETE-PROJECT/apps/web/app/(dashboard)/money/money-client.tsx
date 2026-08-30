@@ -107,7 +107,7 @@ export function MoneyClient({
   return (
     <div className="mt-8 space-y-8">
       {!canApprove && !canApproveBank && myPendingRequestsCount > 0 && (
-        <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-4 text-sm text-zinc-400">
+        <div className="rounded-lg border border-panel-border bg-panel/70 p-4 text-sm text-zinc-400">
           You have {myPendingRequestsCount} bank request{myPendingRequestsCount !== 1 ? "s" : ""} awaiting approval.
         </div>
       )}
@@ -124,7 +124,7 @@ export function MoneyClient({
               {pendingTransactions.map((t) => (
                 <div
                   key={t.id}
-                  className="flex flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-950/60 p-4 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-3 rounded-lg border border-panel-border bg-panel/70 p-4 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div>
                     <p className="text-sm text-zinc-200">
@@ -173,7 +173,7 @@ export function MoneyClient({
               {pendingBankRequests.map((r) => (
                 <div
                   key={r.id}
-                  className="flex flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-950/60 p-4 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-3 rounded-lg border border-panel-border bg-panel/70 p-4 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div>
                     <p className="text-sm text-zinc-200">

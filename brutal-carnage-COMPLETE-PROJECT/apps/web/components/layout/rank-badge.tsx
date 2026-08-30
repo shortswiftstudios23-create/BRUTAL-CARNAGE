@@ -8,8 +8,8 @@ import { Rank } from "@prisma/client";
 import { cn } from "@/lib/utils";
 
 const RANK_CONFIG: Record<Rank, { label: string; className: string; dot: string; glow?: boolean }> = {
-  NOOB: { label: "Noob", className: "bg-zinc-800/60 text-zinc-400 border-zinc-700", dot: "bg-zinc-500" },
-  ROOKIE: { label: "Rookie", className: "bg-zinc-800/60 text-zinc-300 border-zinc-700", dot: "bg-zinc-400" },
+  NOOB: { label: "Noob", className: "bg-white/[0.05] text-zinc-400 border-panel-border", dot: "bg-zinc-500" },
+  ROOKIE: { label: "Rookie", className: "bg-white/[0.05] text-zinc-300 border-panel-border", dot: "bg-zinc-400" },
   CADET: { label: "Cadet", className: "bg-slate-800/60 text-slate-300 border-slate-600", dot: "bg-slate-400" },
   TURFER: { label: "Turfer", className: "bg-blue-950/60 text-blue-300 border-blue-800", dot: "bg-blue-400" },
   EVENT_MANAGER: {

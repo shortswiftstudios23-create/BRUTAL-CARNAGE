@@ -24,7 +24,7 @@ export function AiSummaryPanel({ userId }: { userId: string }) {
   }
 
   return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-5">
+    <div className="rounded-lg border border-panel-border bg-panel/70 p-5">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="flex items-center gap-2 text-xs uppercase tracking-wider text-zinc-500">
           <Sparkles className="h-3.5 w-3.5 text-red-400" />
@@ -33,7 +33,7 @@ export function AiSummaryPanel({ userId }: { userId: string }) {
         <button
           onClick={generate}
           disabled={loading}
-          className="flex items-center gap-1.5 rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-900 disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-md border border-panel-border px-3 py-1.5 text-xs text-zinc-300 hover:bg-white/[0.04] disabled:opacity-50"
         >
           {loading && <Loader2 className="h-3 w-3 animate-spin" />}
           {summary ? "Regenerate" : "Generate"}

@@ -103,19 +103,19 @@ export function AnnouncementsClient({
       )}
 
       {showComposer && (
-        <div className="mb-6 rounded-lg border border-zinc-800 bg-zinc-950/60 p-5">
+        <div className="mb-6 rounded-lg border border-panel-border bg-panel/70 p-5">
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Title"
-            className="mb-3 w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none"
+            className="mb-3 w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none"
           />
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="What does the family need to know?"
             rows={4}
-            className="mb-3 w-full resize-none rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none"
+            className="mb-3 w-full resize-none rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none"
           />
           <div className="flex items-center justify-between">
             <label className="flex items-center gap-2 text-sm text-zinc-400">
@@ -136,7 +136,7 @@ export function AnnouncementsClient({
 
       <div className="space-y-4">
         {announcements.length === 0 && (
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-10 text-center text-sm text-zinc-600">
+          <div className="rounded-lg border border-panel-border bg-panel/70 p-10 text-center text-sm text-zinc-600">
             <Megaphone className="mx-auto mb-3 h-8 w-8 text-zinc-700" />
             No announcements yet.
           </div>
@@ -146,7 +146,7 @@ export function AnnouncementsClient({
           <div
             key={a.id}
             className={`rounded-lg border p-5 ${
-              a.pinned ? "border-red-800/60 bg-red-950/10" : "border-zinc-800 bg-zinc-950/60"
+              a.pinned ? "border-red-800/60 bg-red-950/10" : "border-panel-border bg-panel/70"
             }`}
           >
             <div className="mb-2 flex items-start justify-between gap-4">
@@ -159,7 +159,7 @@ export function AnnouncementsClient({
                   <button
                     onClick={() => togglePin(a.id, !a.pinned)}
                     disabled={busyId === a.id}
-                    className="rounded-md p-1.5 text-zinc-500 hover:bg-zinc-900 hover:text-zinc-200"
+                    className="rounded-md p-1.5 text-zinc-500 hover:bg-white/[0.04] hover:text-zinc-200"
                     title={a.pinned ? "Unpin" : "Pin"}
                   >
                     {a.pinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}

@@ -54,9 +54,9 @@ export default async function MoneyHistoryPage() {
 
         <section className="mb-8">
           <h2 className="mb-3 text-sm font-medium text-zinc-200">Transactions</h2>
-          <div className="overflow-hidden rounded-lg border border-zinc-800">
+          <div className="overflow-hidden rounded-lg border border-panel-border">
             <table className="w-full text-sm">
-              <thead className="bg-zinc-950/80 text-xs uppercase tracking-wider text-zinc-500">
+              <thead className="bg-panel/90 text-xs uppercase tracking-wider text-zinc-500">
                 <tr>
                   {canViewAll && <th className="px-4 py-2 text-left">Member</th>}
                   <th className="px-4 py-2 text-left">Category</th>
@@ -67,7 +67,7 @@ export default async function MoneyHistoryPage() {
               </thead>
               <tbody className="divide-y divide-zinc-800">
                 {transactions.map((t) => (
-                  <tr key={t.id} className="bg-zinc-950/40">
+                  <tr key={t.id} className="bg-panel/50">
                     {canViewAll && <td className="px-4 py-2 text-zinc-300">{t.user.username}</td>}
                     <td className="px-4 py-2 text-zinc-300">{formatType(t.type)}</td>
                     <td className="px-4 py-2 text-right text-zinc-200">${Number(t.finalAmount).toLocaleString()}</td>
@@ -92,9 +92,9 @@ export default async function MoneyHistoryPage() {
 
         <section>
           <h2 className="mb-3 text-sm font-medium text-zinc-200">Bank requests</h2>
-          <div className="overflow-hidden rounded-lg border border-zinc-800">
+          <div className="overflow-hidden rounded-lg border border-panel-border">
             <table className="w-full text-sm">
-              <thead className="bg-zinc-950/80 text-xs uppercase tracking-wider text-zinc-500">
+              <thead className="bg-panel/90 text-xs uppercase tracking-wider text-zinc-500">
                 <tr>
                   {canViewAll && <th className="px-4 py-2 text-left">Member</th>}
                   <th className="px-4 py-2 text-left">Reason</th>
@@ -105,7 +105,7 @@ export default async function MoneyHistoryPage() {
               </thead>
               <tbody className="divide-y divide-zinc-800">
                 {bankRequests.map((r) => (
-                  <tr key={r.id} className="bg-zinc-950/40">
+                  <tr key={r.id} className="bg-panel/50">
                     {canViewAll && <td className="px-4 py-2 text-zinc-300">{r.user.username}</td>}
                     <td className="px-4 py-2 text-zinc-300">{r.reason}</td>
                     <td className="px-4 py-2 text-right text-zinc-200">${Number(r.amount).toLocaleString()}</td>

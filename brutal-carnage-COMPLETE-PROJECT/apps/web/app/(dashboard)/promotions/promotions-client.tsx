@@ -73,7 +73,7 @@ export function PromotionsClient({
   return (
     <div className="space-y-6">
       {canRequest && !canReview && (
-        <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-5">
+        <div className="rounded-lg border border-panel-border bg-panel/70 p-5">
           <h2 className="mb-1 text-sm font-medium text-zinc-200">Request a promotion</h2>
           {nextRank ? (
             <>
@@ -97,8 +97,8 @@ export function PromotionsClient({
         </div>
       )}
 
-      <div className="rounded-lg border border-zinc-800 bg-zinc-950/60">
-        <div className="border-b border-zinc-800 px-5 py-4">
+      <div className="rounded-lg border border-panel-border bg-panel/70">
+        <div className="border-b border-panel-border px-5 py-4">
           <h2 className="text-sm font-medium text-zinc-200">
             {canReview ? "All promotion requests" : "Your promotion requests"}
           </h2>

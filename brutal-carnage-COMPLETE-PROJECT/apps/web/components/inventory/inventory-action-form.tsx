@@ -106,7 +106,7 @@ export function InventoryActionForm({ items, defaultType }: { items: Item[]; def
   }
 
   return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-5">
+    <div className="rounded-lg border border-panel-border bg-panel/70 p-5">
       <div className="mb-4 flex gap-2">
         {(["DONATE", "TAKE", "ORDER"] as const).map((t) => (
           <button
@@ -115,7 +115,7 @@ export function InventoryActionForm({ items, defaultType }: { items: Item[]; def
             className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
               type === t
                 ? "bg-red-950/50 text-red-300 ring-1 ring-red-800"
-                : "text-zinc-400 hover:bg-zinc-900"
+                : "text-zinc-400 hover:bg-white/[0.04]"
             }`}
           >
             {t.charAt(0) + t.slice(1).toLowerCase()}
@@ -127,10 +127,10 @@ export function InventoryActionForm({ items, defaultType }: { items: Item[]; def
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Search items…"
-        className="mb-3 w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+        className="mb-3 w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
       />
 
-      <div className="mb-4 max-h-56 space-y-1 overflow-y-auto rounded-md border border-zinc-900 p-2">
+      <div className="mb-4 max-h-56 space-y-1 overflow-y-auto rounded-md border border-panel-border p-2">
         {filteredItems.map((item) => {
           const isSelected = selected.some((s) => s.itemId === item.id);
           const selectedEntry = selected.find((s) => s.itemId === item.id);
@@ -138,7 +138,7 @@ export function InventoryActionForm({ items, defaultType }: { items: Item[]; def
             <div
               key={item.id}
               className={`flex items-center justify-between rounded-md px-2 py-1.5 ${
-                isSelected ? "bg-red-950/20" : "hover:bg-zinc-900"
+                isSelected ? "bg-red-950/20" : "hover:bg-white/[0.04]"
               }`}
             >
               <button
@@ -155,7 +155,7 @@ export function InventoryActionForm({ items, defaultType }: { items: Item[]; def
                   min={1}
                   value={selectedEntry.quantity}
                   onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 1)}
-                  className="w-16 rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-right text-xs text-zinc-200"
+                  className="w-16 rounded border border-panel-border bg-white/[0.03] px-2 py-1 text-right text-xs text-zinc-200"
                 />
               )}
             </div>
@@ -178,26 +178,26 @@ export function InventoryActionForm({ items, defaultType }: { items: Item[]; def
         </div>
 
         {newItems.map((draft, i) => (
-          <div key={i} className="mb-2 flex items-center gap-2 rounded-md border border-zinc-800 bg-zinc-900/50 p-2">
+          <div key={i} className="mb-2 flex items-center gap-2 rounded-md border border-panel-border bg-white/[0.03] p-2">
             <input
               value={draft.name}
               onChange={(e) => updateNewItem(i, "name", e.target.value)}
               placeholder="Item name"
-              className="flex-1 rounded border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-200 placeholder:text-zinc-600"
+              className="flex-1 rounded border border-panel-border bg-white/[0.03] px-2 py-1.5 text-sm text-zinc-200 placeholder:text-zinc-600"
             />
             <input
               type="number"
               value={draft.suggestedPrice || ""}
               onChange={(e) => updateNewItem(i, "suggestedPrice", parseFloat(e.target.value) || 0)}
               placeholder="Suggested price"
-              className="w-28 rounded border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-200 placeholder:text-zinc-600"
+              className="w-28 rounded border border-panel-border bg-white/[0.03] px-2 py-1.5 text-sm text-zinc-200 placeholder:text-zinc-600"
             />
             <input
               type="number"
               min={1}
               value={draft.quantity}
               onChange={(e) => updateNewItem(i, "quantity", parseInt(e.target.value) || 1)}
-              className="w-16 rounded border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-200"
+              className="w-16 rounded border border-panel-border bg-white/[0.03] px-2 py-1.5 text-sm text-zinc-200"
             />
             <button onClick={() => removeNewItem(i)} className="text-zinc-600 hover:text-red-400">
               <X className="h-4 w-4" />
@@ -219,7 +219,7 @@ export function InventoryActionForm({ items, defaultType }: { items: Item[]; def
         <select
           value={daysAgo}
           onChange={(e) => setDaysAgo(Number(e.target.value))}
-          className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+          className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
         >
           {backdateOptions().map((opt) => (
             <option key={opt.daysAgo} value={opt.daysAgo}>
@@ -234,7 +234,7 @@ export function InventoryActionForm({ items, defaultType }: { items: Item[]; def
         onChange={(e) => setNote(e.target.value)}
         rows={2}
         placeholder="Add context for reviewers… (optional)"
-        className="mb-4 w-full resize-none rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+        className="mb-4 w-full resize-none rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
       />
 
       <button

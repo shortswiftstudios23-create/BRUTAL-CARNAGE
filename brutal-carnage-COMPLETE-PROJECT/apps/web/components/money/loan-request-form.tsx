@@ -55,7 +55,7 @@ export function LoanRequestForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 rounded-lg border border-zinc-800 bg-zinc-950/60 p-5">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 rounded-lg border border-panel-border bg-panel/70 p-5">
       <div>
         <h2 className="mb-1 text-sm font-medium text-zinc-200">Request a loan from the family</h2>
         <p className="mb-3 text-xs text-zinc-500">
@@ -72,7 +72,7 @@ export function LoanRequestForm() {
             step="0.01"
             {...register("amount")}
             placeholder="0.00"
-            className="w-full rounded-md border border-zinc-800 bg-zinc-900 py-2 pl-7 pr-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+            className="w-full rounded-md border border-panel-border bg-white/[0.03] py-2 pl-7 pr-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
           />
         </div>
         {errors.amount && <p className="mt-1 text-xs text-red-500">{errors.amount.message}</p>}
@@ -90,7 +90,7 @@ export function LoanRequestForm() {
           {...register("reason")}
           rows={2}
           placeholder="What is this for?"
-          className="w-full resize-none rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+          className="w-full resize-none rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
         />
         {errors.reason && <p className="mt-1 text-xs text-red-500">{errors.reason.message}</p>}
       </div>
@@ -98,7 +98,7 @@ export function LoanRequestForm() {
       <button
         type="submit"
         disabled={submitting}
-        className="w-full rounded-md border border-zinc-700 bg-zinc-900 py-2.5 text-sm font-medium text-zinc-200 transition-colors hover:bg-zinc-800 disabled:opacity-50"
+        className="w-full rounded-md border border-panel-border bg-white/[0.03] py-2.5 text-sm font-medium text-zinc-200 transition-colors hover:bg-white/[0.05] disabled:opacity-50"
       >
         {submitting ? "Submitting…" : "Request loan"}
       </button>
