@@ -13,8 +13,6 @@ interface Request {
   toRank: string;
   status: "PENDING" | "APPROVED" | "REJECTED";
   statsSnapshot: Record<string, unknown>;
-  reason: string | null;
-  rejectionNote: string | null;
   createdAt: string;
   isOwn: boolean;
 }
@@ -23,41 +21,34 @@ export function PromotionsClient({
   requests,
   canReview,
   canRequest,
-  nextRank,
+  eligibleRanks,
 }: {
   requests: Request[];
   canReview: boolean;
   canRequest: boolean;
-  nextRank: string | null;
+  eligibleRanks: string[];
 }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
-  const [reason, setReason] = useState("");
+  const [selectedRank, setSelectedRank] = useState(eligibleRanks[0] ?? "");
 
   const hasPending = requests.some((r) => r.isOwn && r.status === "PENDING");
-  const myRequests = requests.filter((r) => r.isOwn);
-  const lastRejected = myRequests.find((r) => r.status === "REJECTED");
 
   async function submitRequest() {
-    if (!nextRank) return;
-    if (reason.trim().length < 5) {
-      toast.error("Give a reason (at least 5 characters) — why do you think you deserve this?");
-      return;
-    }
+    if (!selectedRank) return;
     setSubmitting(true);
     try {
       const res = await fetch("/api/promotions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ toRank: nextRank, reason: reason.trim() }),
+        body: JSON.stringify({ toRank: selectedRank }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
         throw new Error(data?.error ?? "Failed");
       }
-      toast.success("Promotion request submitted — also posted to Discord for review.");
-      setReason("");
+      toast.success("Promotion request submitted");
       router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't submit the request");
@@ -67,22 +58,9 @@ export function PromotionsClient({
   }
 
   async function review(id: string, action: "approve" | "reject") {
-    let rejectionNote: string | undefined;
-    if (action === "reject") {
-      const input = window.prompt(
-        "Reason for declining this request? The member will see this, so they know what to work on before appealing."
-      );
-      if (input === null) return; // cancelled
-      rejectionNote = input.trim() || undefined;
-    }
-
     setReviewingId(id);
     try {
-      const res = await fetch(`/api/promotions/${id}/${action}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rejectionNote }),
-      });
+      const res = await fetch(`/api/promotions/${id}/${action}`, { method: "POST" });
       if (!res.ok) throw new Error();
       toast.success(action === "approve" ? "Promotion approved" : "Request rejected");
       router.refresh();
@@ -95,51 +73,38 @@ export function PromotionsClient({
 
   return (
     <div className="space-y-6">
-      {canRequest && !canReview && (
-        <div className="rounded-lg border border-panel-border bg-panel/70 p-5">
+      {canRequest && (
+        <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-4 sm:p-5">
           <h2 className="mb-1 text-sm font-medium text-zinc-200">Request a promotion</h2>
-          {nextRank ? (
+          {eligibleRanks.length > 0 ? (
             <>
               <p className="mb-3 text-sm text-zinc-500">
-                Submit a request to move up to <span className="text-zinc-300">{nextRank.replace(/_/g, " ")}</span>.
+                Anyone can request any rank above their own — pick the rank you're asking for.
                 Your current stats will be attached automatically.
               </p>
-              {lastRejected && !hasPending && (
-                <div className="mb-3 rounded-md border border-red-900/50 bg-red-950/20 p-3 text-xs text-zinc-400">
-                  Your last request was declined
-                  {lastRejected.rejectionNote ? (
-                    <>
-                      : <span className="text-zinc-300">"{lastRejected.rejectionNote}"</span>
-                    </>
-                  ) : (
-                    " — no reason was given."
-                  )}{" "}
-                  Address that, then submit again below.
-                </div>
-              )}
-              {!hasPending && (
-                <div className="mb-3">
-                  <label className="mb-1.5 block text-xs uppercase tracking-wider text-zinc-500">
-                    Reason
-                  </label>
-                  <textarea
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    rows={2}
-                    placeholder="Why do you think you deserve this promotion?"
-                    className="w-full resize-none rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
-                  />
-                </div>
-              )}
-              <button
-                onClick={submitRequest}
-                disabled={submitting || hasPending}
-                className="flex items-center gap-2 rounded-md bg-gradient-to-r from-red-800 to-red-700 px-4 py-2 text-sm font-medium text-zinc-100 shadow-[0_0_18px_-4px_rgba(220,38,38,0.5)] hover:shadow-[0_0_24px_-2px_rgba(220,38,38,0.7)] disabled:opacity-50"
-              >
-                {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                <ArrowUpCircle className="h-4 w-4" />
-                {hasPending ? "Request pending" : lastRejected ? "Resubmit request" : "Request promotion"}
-              </button>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <select
+                  value={selectedRank}
+                  onChange={(e) => setSelectedRank(e.target.value)}
+                  disabled={submitting || hasPending}
+                  className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800 disabled:opacity-50 sm:w-auto"
+                >
+                  {eligibleRanks.map((rank) => (
+                    <option key={rank} value={rank}>
+                      {rank.replace(/_/g, " ")}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={submitRequest}
+                  disabled={submitting || hasPending}
+                  className="flex items-center justify-center gap-2 rounded-md bg-gradient-to-r from-red-800 to-red-700 px-4 py-2 text-sm font-medium text-zinc-100 shadow-[0_0_18px_-4px_rgba(220,38,38,0.5)] hover:shadow-[0_0_24px_-2px_rgba(220,38,38,0.7)] disabled:opacity-50"
+                >
+                  {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  <ArrowUpCircle className="h-4 w-4" />
+                  {hasPending ? "Request pending" : "Request promotion"}
+                </button>
+              </div>
             </>
           ) : (
             <p className="text-sm text-zinc-600">You're already at the top rank.</p>
@@ -147,8 +112,8 @@ export function PromotionsClient({
         </div>
       )}
 
-      <div className="rounded-lg border border-panel-border bg-panel/70">
-        <div className="border-b border-panel-border px-5 py-4">
+      <div className="rounded-lg border border-zinc-800 bg-zinc-950/60">
+        <div className="border-b border-zinc-800 px-5 py-4">
           <h2 className="text-sm font-medium text-zinc-200">
             {canReview ? "All promotion requests" : "Your promotion requests"}
           </h2>
@@ -158,8 +123,8 @@ export function PromotionsClient({
         ) : (
           <ul className="divide-y divide-zinc-800">
             {requests.map((r) => (
-              <li key={r.id} className="p-5">
-                <div className="mb-2 flex items-center justify-between">
+              <li key={r.id} className="p-4 sm:p-5">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <p className="text-sm text-zinc-200">
                     {r.username} — {r.fromRank.replace(/_/g, " ")} →{" "}
                     <span className="text-red-400">{r.toRank.replace(/_/g, " ")}</span>
@@ -173,18 +138,6 @@ export function PromotionsClient({
                   {"eventsAttended" in r.statsSnapshot && <span>Events attended: {String(r.statsSnapshot.eventsAttended)}</span>}
                   {"strikeCount" in r.statsSnapshot && <span>Strikes: {String(r.statsSnapshot.strikeCount)}</span>}
                 </div>
-                {r.reason && (
-                  <p className="mb-3 rounded-md border border-panel-border bg-white/[0.03] p-2.5 text-xs text-zinc-400">
-                    <span className="text-zinc-500">Reason: </span>
-                    {r.reason}
-                  </p>
-                )}
-                {r.status === "REJECTED" && r.rejectionNote && (
-                  <p className="mb-3 rounded-md border border-red-900/40 bg-red-950/10 p-2.5 text-xs text-zinc-400">
-                    <span className="text-zinc-500">Reason: </span>
-                    {r.rejectionNote}
-                  </p>
-                )}
                 {canReview && r.status === "PENDING" && (
                   <div className="flex gap-2">
                     <button

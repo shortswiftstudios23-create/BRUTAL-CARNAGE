@@ -83,14 +83,14 @@ export function EvidenceClient({ files }: { files: EvidenceFile[] }) {
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-panel-border pb-3">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 pb-3">
         <div className="flex items-center gap-2">
           {TABS.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setFilter(tab.key)}
               className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                filter === tab.key ? "bg-red-950/40 text-red-200" : "text-zinc-500 hover:bg-white/[0.04] hover:text-zinc-300"
+                filter === tab.key ? "bg-red-950/40 text-red-200" : "text-zinc-500 hover:bg-zinc-900 hover:text-zinc-300"
               }`}
             >
               {tab.label}
@@ -110,7 +110,7 @@ export function EvidenceClient({ files }: { files: EvidenceFile[] }) {
       {formOpen && (
         <form
           onSubmit={submitLink}
-          className="mb-6 space-y-4 rounded-lg border border-panel-border bg-panel/70 p-5"
+          className="mb-6 space-y-4 rounded-lg border border-zinc-800 bg-zinc-950/60 p-5"
         >
           <div>
             <h2 className="mb-1 text-sm font-medium text-zinc-200">File a Drive link (or any URL)</h2>
@@ -127,7 +127,7 @@ export function EvidenceClient({ files }: { files: EvidenceFile[] }) {
               onChange={(e) => setUrl(e.target.value)}
               required
               placeholder="https://drive.google.com/..."
-              className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+              className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
             />
           </div>
 
@@ -137,7 +137,7 @@ export function EvidenceClient({ files }: { files: EvidenceFile[] }) {
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value as "video" | "image")}
-                className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+                className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
               >
                 <option value="image">Image / photo</option>
                 <option value="video">Video</option>
@@ -153,7 +153,7 @@ export function EvidenceClient({ files }: { files: EvidenceFile[] }) {
                 onChange={(e) => setTitle(e.target.value)}
                 maxLength={120}
                 placeholder="e.g. Warehouse raid footage"
-                className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+                className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
               />
             </div>
           </div>
@@ -168,7 +168,7 @@ export function EvidenceClient({ files }: { files: EvidenceFile[] }) {
               rows={3}
               maxLength={1000}
               placeholder="What does this show? Who/what/when?"
-              className="w-full resize-none rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+              className="w-full resize-none rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
             />
           </div>
 
@@ -189,7 +189,7 @@ export function EvidenceClient({ files }: { files: EvidenceFile[] }) {
       )}
 
       {filtered.length === 0 ? (
-        <div className="rounded-lg border border-panel-border bg-panel/70 p-10 text-center text-sm text-zinc-600">
+        <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-10 text-center text-sm text-zinc-600">
           <FolderLock className="mx-auto mb-3 h-8 w-8 text-zinc-700" />
           Nothing filed here yet.
         </div>
@@ -201,7 +201,7 @@ export function EvidenceClient({ files }: { files: EvidenceFile[] }) {
               href={f.url}
               target="_blank"
               rel="noreferrer"
-              className="group rounded-lg border border-panel-border bg-panel/70 p-4 transition-colors hover:border-red-900"
+              className="group rounded-lg border border-zinc-800 bg-zinc-950/60 p-4 transition-colors hover:border-red-900"
             >
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-zinc-400">
@@ -213,11 +213,11 @@ export function EvidenceClient({ files }: { files: EvidenceFile[] }) {
 
               {f.type === "image" ? (
                 <div
-                  className="mb-3 h-32 rounded-md bg-cover bg-center bg-white/[0.03]"
+                  className="mb-3 h-32 rounded-md bg-cover bg-center bg-zinc-900"
                   style={{ backgroundImage: `url(${f.url})` }}
                 />
               ) : (
-                <div className="mb-3 flex h-32 items-center justify-center rounded-md bg-white/[0.03]">
+                <div className="mb-3 flex h-32 items-center justify-center rounded-md bg-zinc-900">
                   <Video className="h-8 w-8 text-zinc-700" />
                 </div>
               )}

@@ -20,11 +20,7 @@ export default async function InventoryPage() {
   ]);
 
   const totalWorth = items.reduce((sum, i) => sum + Number(i.suggestedPrice) * i.currentStock, 0);
-  const LOW_STOCK_THRESHOLD = 5;
-  const lowStockItems = items
-    .filter((i) => i.currentStock <= LOW_STOCK_THRESHOLD)
-    .sort((a, b) => a.currentStock - b.currentStock);
-  const canSeeWorth = can(session!.user.rank, "canViewInventoryWorth");
+  const lowStockCount = items.filter((i) => i.currentStock <= 5).length;
 
   const formattedItems = items.map((i) => ({
     id: i.id,
@@ -38,28 +34,12 @@ export default async function InventoryPage() {
     <>
       <Topbar pageTitle="Inventory" notificationCount={unreadCount} />
 
-      <main className="flex-1 overflow-y-auto p-6">
-        <div className={`mb-6 grid grid-cols-1 gap-4 ${canSeeWorth ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
-          {canSeeWorth && (
-            <StatCard label="Total inventory worth" value={`$${totalWorth.toLocaleString()}`} icon={DollarSign} accent="success" />
-          )}
+      <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6">
+        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <StatCard label="Total inventory worth" value={`$${totalWorth.toLocaleString()}`} icon={DollarSign} accent="success" />
           <StatCard label="Catalog items" value={items.length.toString()} icon={Package} />
-          <StatCard label="Low stock (≤5)" value={lowStockItems.length.toString()} icon={AlertTriangle} accent={lowStockItems.length > 0 ? "danger" : "neutral"} />
+          <StatCard label="Low stock (≤5)" value={lowStockCount.toString()} icon={AlertTriangle} accent={lowStockCount > 0 ? "danger" : "neutral"} />
         </div>
-
-        {lowStockItems.length > 0 && (
-          <Link
-            href="/inventory/all"
-            className="mb-6 block rounded-lg border border-amber-900/50 bg-amber-950/20 px-4 py-3 text-sm text-amber-300 hover:bg-amber-950/30"
-          >
-            <span className="font-medium">Running low:</span>{" "}
-            {lowStockItems
-              .slice(0, 8)
-              .map((i) => `${i.name} (${i.currentStock} left)`)
-              .join(", ")}
-            {lowStockItems.length > 8 && ` +${lowStockItems.length - 8} more`}
-          </Link>
-        )}
 
         {can(session!.user.rank, "canApprovePendingItems") && pendingCount > 0 && (
           <Link
@@ -74,7 +54,7 @@ export default async function InventoryPage() {
         {can(session!.user.rank, "canApproveItemActions") && (
           <Link
             href="/admin"
-            className="mb-6 flex items-center justify-between rounded-lg border border-panel-border bg-panel/70 px-4 py-3 text-sm text-zinc-400 hover:bg-white/[0.04]"
+            className="mb-6 flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-950/60 px-4 py-3 text-sm text-zinc-400 hover:bg-zinc-900"
           >
             <span>Approve donate/take/order requests on existing items</span>
             <span>Open admin panel →</span>
@@ -86,7 +66,7 @@ export default async function InventoryPage() {
             <InventoryActionForm items={formattedItems} defaultType="DONATE" />
           </div>
 
-          <div className="rounded-lg border border-panel-border bg-panel/70 p-5">
+          <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-5">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-sm font-medium text-zinc-200">Catalog snapshot</h2>
               <Link href="/inventory/all" className="text-xs text-red-400 hover:text-red-300">
@@ -104,24 +84,16 @@ export default async function InventoryPage() {
               ))}
             </ul>
             <div className="mt-4 flex gap-2">
-              <Link href="/inventory/all" className="flex-1 rounded-md border border-panel-border py-2 text-center text-xs text-zinc-400 hover:bg-white/[0.04]">
+              <Link href="/inventory/all" className="flex-1 rounded-md border border-zinc-800 py-2 text-center text-xs text-zinc-400 hover:bg-zinc-900">
                 All items
               </Link>
-              <Link href="/inventory/wishlist" className="flex-1 rounded-md border border-panel-border py-2 text-center text-xs text-zinc-400 hover:bg-white/[0.04]">
+              <Link href="/inventory/wishlist" className="flex-1 rounded-md border border-zinc-800 py-2 text-center text-xs text-zinc-400 hover:bg-zinc-900">
                 Wishlist
               </Link>
-              <Link href="/inventory/pending" className="flex-1 rounded-md border border-panel-border py-2 text-center text-xs text-zinc-400 hover:bg-white/[0.04]">
+              <Link href="/inventory/pending" className="flex-1 rounded-md border border-zinc-800 py-2 text-center text-xs text-zinc-400 hover:bg-zinc-900">
                 Pending items
               </Link>
             </div>
-            {can(session!.user.rank, "canViewTotalItemsAdded") && (
-              <Link
-                href="/inventory/totals"
-                className="mt-2 block rounded-md border border-panel-border py-2 text-center text-xs text-zinc-400 hover:bg-white/[0.04]"
-              >
-                Total items added (all-time)
-              </Link>
-            )}
           </div>
         </div>
       </main>

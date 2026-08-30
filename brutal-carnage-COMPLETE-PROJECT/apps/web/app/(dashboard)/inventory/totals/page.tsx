@@ -42,7 +42,7 @@ export default async function TotalItemsAddedPage() {
   return (
     <>
       <Topbar pageTitle="Total items added" notificationCount={unreadCount} />
-      <main className="flex-1 overflow-y-auto p-6">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6">
         <Link href="/inventory" className="mb-4 flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-200">
           <ArrowLeft className="h-4 w-4" /> Back to inventory
         </Link>

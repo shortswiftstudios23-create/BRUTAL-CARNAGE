@@ -4,8 +4,7 @@ import { RankBadge } from "@/components/layout/rank-badge";
 import { BadgePill } from "@/components/performance/badge-pill";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Trophy, CalendarCheck, PackageMinus } from "lucide-react";
-import { getTopContributors } from "@/lib/contributions";
+import { Trophy } from "lucide-react";
 
 export default async function LeaderboardPage() {
   const session = await auth();
@@ -13,20 +12,44 @@ export default async function LeaderboardPage() {
     where: { userId: session!.user.id, read: false },
   });
 
-  // Money + items donated minus personal items taken — see
-  // lib/contributions.ts for the shared rules. This is the exact same
-  // computation the dashboard's "Top contributors" preview widget uses,
-  // so the two never disagree.
-  const leaderboardEntries = (await getTopContributors(25)).map((e) => ({
-    userId: e.userId,
-    moneyDonated: e.moneyDonated,
-    itemsDonatedValue: e.itemsDonatedValue,
-    itemsTakenValue: e.itemsTakenValue,
-    moneyWithdrawn: e.moneyWithdrawn,
-    totalTaken: e.itemsTakenValue + e.moneyWithdrawn,
-    eventsAttended: e.eventsAttended,
-    total: e.netContributed,
-  }));
+  // Only DONATION counts toward the public leaderboard — SOLD_ITEMS income
+  // is a business transaction, not a personal contribution, so it's
+  // deliberately excluded here.
+  const moneyGrouped = await prisma.transaction.groupBy({
+    by: ["userId"],
+    where: { type: "DONATION", status: "APPROVED" },
+    _sum: { finalAmount: true },
+  });
+
+  // Items donated to the family (approved DONATE actions), valued at each
+  // item's suggested price so it can be combined with money into one
+  // comparable "total worth contributed" figure.
+  const itemActions = await prisma.itemAction.findMany({
+    where: { type: "DONATE", status: "APPROVED" },
+    include: { item: { select: { suggestedPrice: true } } },
+  });
+
+  const itemsValueByUser = new Map<string, number>();
+  for (const action of itemActions) {
+    const value = Number(action.item.suggestedPrice) * action.quantity;
+    itemsValueByUser.set(action.userId, (itemsValueByUser.get(action.userId) ?? 0) + value);
+  }
+
+  const moneyByUser = new Map<string, number>();
+  for (const g of moneyGrouped) {
+    moneyByUser.set(g.userId, Number(g._sum.finalAmount ?? 0));
+  }
+
+  const allUserIds = new Set<string>([...moneyByUser.keys(), ...itemsValueByUser.keys()]);
+
+  const leaderboardEntries = Array.from(allUserIds)
+    .map((userId) => {
+      const moneyDonated = moneyByUser.get(userId) ?? 0;
+      const itemsDonatedValue = itemsValueByUser.get(userId) ?? 0;
+      return { userId, moneyDonated, itemsDonatedValue, total: moneyDonated + itemsDonatedValue };
+    })
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 25);
 
   const users = await prisma.user.findMany({
     where: { id: { in: leaderboardEntries.map((g) => g.userId) } },
@@ -37,9 +60,9 @@ export default async function LeaderboardPage() {
   return (
     <>
       <Topbar pageTitle="Leaderboard" notificationCount={unreadCount} />
-      <main className="flex-1 overflow-y-auto p-6">
-        <div className="rounded-lg border border-panel-border bg-panel/70">
-          <div className="border-b border-panel-border px-5 py-4">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6">
+        <div className="rounded-lg border border-zinc-800 bg-zinc-950/60">
+          <div className="border-b border-zinc-800 px-5 py-4">
             <h1 className="flex items-center gap-2 font-display text-lg tracking-wide text-zinc-100">
               <Trophy className="h-4 w-4 text-amber-400" />
               Top contributors
@@ -77,33 +100,11 @@ export default async function LeaderboardPage() {
                   </div>
                   <div className="text-right">
                     <p className="font-display text-base text-zinc-100">
-                      ${entry.total.toLocaleString()} <span className="text-xs font-normal text-zinc-500">net</span>
+                      ${entry.total.toLocaleString()} <span className="text-xs font-normal text-zinc-500">total</span>
                     </p>
                     <p className="mt-0.5 text-xs text-zinc-500">
-                      ${entry.moneyDonated.toLocaleString()} money · ${entry.itemsDonatedValue.toLocaleString()} items donated
+                      ${entry.moneyDonated.toLocaleString()} money · ${entry.itemsDonatedValue.toLocaleString()} items
                     </p>
-                    <p className="mt-0.5 flex items-center justify-end gap-3 text-xs text-zinc-600">
-                      <span className="flex items-center gap-1">
-                        <CalendarCheck className="h-3 w-3" /> {entry.eventsAttended} events
-                      </span>
-                    </p>
-                    {entry.totalTaken > 0 && (
-                      <p className="mt-0.5 flex items-center justify-end gap-3 text-xs text-red-500/80">
-                        {entry.moneyWithdrawn > 0 && (
-                          <span className="flex items-center gap-1">
-                            <PackageMinus className="h-3 w-3" /> -${entry.moneyWithdrawn.toLocaleString()} money taken
-                          </span>
-                        )}
-                        {entry.itemsTakenValue > 0 && (
-                          <span className="flex items-center gap-1">
-                            <PackageMinus className="h-3 w-3" /> -${entry.itemsTakenValue.toLocaleString()} items taken
-                          </span>
-                        )}
-                        <span className="flex items-center gap-1 font-medium">
-                          -${entry.totalTaken.toLocaleString()} total taken
-                        </span>
-                      </p>
-                    )}
                   </div>
                 </li>
               );

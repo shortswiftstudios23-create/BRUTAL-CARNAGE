@@ -34,7 +34,7 @@ export default async function DisciplinePage() {
   return (
     <>
       <Topbar pageTitle="Discipline" notificationCount={unreadCount} />
-      <main className="flex-1 overflow-y-auto p-6">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6">
         <DisciplineClient
           strikes={strikes.map((s) => ({
             id: s.id,

@@ -53,15 +53,10 @@ export const PERMISSIONS = {
   canCreateEvent: (r: Rank) => isAtLeast(r, "EVENT_MANAGER"),
   canMarkEventResult: (r: Rank) => isAtLeast(r, "EVENT_MANAGER"),
 
-  // Event Manager+ can see the family's total warehouse inventory value
-  // on the Inventory page. Below that rank, members can still donate,
-  // take, order, and add new items — they just don't see the dollar
-  // total across the whole catalog.
-  canViewInventoryWorth: (r: Rank) => isAtLeast(r, "EVENT_MANAGER"),
-
   // Under Deputy+ (promotion pipeline)
   canReviewPromotions: (r: Rank) => isAtLeast(r, "UNDER_DEPUTY"),
-  canSubmitPromotionRequest: (r: Rank) => isAtLeast(r, "CADET"), // must be past Rookie to be promotable via request
+  // Any rank — including NOOB — can post a promotion request.
+  canSubmitPromotionRequest: (_r: Rank) => true,
 
   // Boss+ (top-level admin)
   canManageAnnouncements: (r: Rank) => isAtLeast(r, "BOSS"),
@@ -72,34 +67,6 @@ export const PERMISSIONS = {
   // screen. Gated to whoever can approve at least one thing (Business
   // Manager and up: admins, under deputy, deputy, boss, big boss).
   canAccessAdminPanel: (r: Rank) => isAtLeast(r, "BUSINESS_MANAGER"),
-
-  // Deputy+ can hand-create a member's ID/password instead of waiting
-  // for the Discord bot to auto-provision one on join. Kept separate
-  // from canManageBlacklist etc. even though the threshold matches
-  // today, so this can be tuned independently later.
-  canCreateMemberManually: (r: Rank) => isAtLeast(r, "DEPUTY"),
-
-  // Deputy+ can reset an existing member's login password (e.g. they
-  // lost it, or it needs rotating). Same threshold as manual creation
-  // since it's the same trust level — kept as its own key so it can be
-  // tuned independently later.
-  canResetMemberPassword: (r: Rank) => isAtLeast(r, "DEPUTY"),
-
-  // Deputy+ view of every item ever added historically (not just
-  // current stock) with the ability to correct name/price.
-  canViewTotalItemsAdded: (r: Rank) => isAtLeast(r, "DEPUTY"),
-  canEditItemCatalog: (r: Rank) => isAtLeast(r, "DEPUTY"),
-
-  // Boss+ per-member performance drill-down: donation/withdrawal
-  // timeline and event history for any single member, not just your own.
-  canViewMemberPerformanceDetail: (r: Rank) => isAtLeast(r, "BOSS"),
-
-  // Event Manager+ already mark results (canMarkEventResult above); this
-  // is the narrower "see who registered vs who actually showed up"
-  // read-only view, and the extended 3-day post-start visibility window
-  // on the events list. Same threshold today, kept as its own key so it
-  // can be tuned independently of result-marking later.
-  canViewEventAttendance: (r: Rank) => isAtLeast(r, "EVENT_MANAGER"),
 } as const;
 
 export type PermissionKey = keyof typeof PERMISSIONS;

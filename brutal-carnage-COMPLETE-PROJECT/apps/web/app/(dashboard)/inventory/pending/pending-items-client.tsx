@@ -92,9 +92,9 @@ export function PendingItemsClient({ items }: { items: PendingItemEntry[] }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-panel-border bg-panel/70 p-3">
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
         <label className="flex items-center gap-2 text-xs text-zinc-400">
-          <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} className="h-4 w-4 rounded border-panel-border bg-white/[0.03]" />
+          <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} className="h-4 w-4 rounded border-zinc-700 bg-zinc-900" />
           Select all ({items.length})
         </label>
         <div className="ml-auto flex flex-wrap gap-2">
@@ -125,13 +125,13 @@ export function PendingItemsClient({ items }: { items: PendingItemEntry[] }) {
 
       <div className="space-y-2">
         {items.map((item) => (
-          <div key={item.id} className="flex flex-col gap-3 rounded-lg border border-panel-border bg-panel/70 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div key={item.id} className="flex flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-950/60 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
               <input
                 type="checkbox"
                 checked={selected.has(item.id)}
                 onChange={() => toggleSelected(item.id)}
-                className="mt-1 h-4 w-4 rounded border-panel-border bg-white/[0.03]"
+                className="mt-1 h-4 w-4 rounded border-zinc-700 bg-zinc-900"
               />
               <div>
                 {editingId === item.id ? (
@@ -139,7 +139,7 @@ export function PendingItemsClient({ items }: { items: PendingItemEntry[] }) {
                     <input
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
-                      className="rounded-md border border-panel-border bg-white/[0.03] px-2 py-1 text-xs text-zinc-100"
+                      className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-zinc-100"
                       placeholder="Item name"
                     />
                     <input
@@ -147,7 +147,7 @@ export function PendingItemsClient({ items }: { items: PendingItemEntry[] }) {
                       onChange={(e) => setEditPrice(e.target.value)}
                       type="number"
                       min="0"
-                      className="w-28 rounded-md border border-panel-border bg-white/[0.03] px-2 py-1 text-xs text-zinc-100"
+                      className="w-28 rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-zinc-100"
                       placeholder="Price"
                     />
                     <span className="text-xs text-zinc-500">× {item.quantity}</span>
@@ -180,7 +180,7 @@ export function PendingItemsClient({ items }: { items: PendingItemEntry[] }) {
                   </button>
                   <button
                     onClick={() => setEditingId(null)}
-                    className="rounded-md border border-panel-border px-3 py-1.5 text-xs text-zinc-400 hover:bg-white/[0.04]"
+                    className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-400 hover:bg-zinc-900"
                   >
                     Cancel
                   </button>
@@ -189,7 +189,7 @@ export function PendingItemsClient({ items }: { items: PendingItemEntry[] }) {
                 <>
                   <button
                     onClick={() => startEdit(item)}
-                    className="flex items-center gap-1 rounded-md border border-panel-border px-3 py-1.5 text-xs text-zinc-300 hover:bg-white/[0.04]"
+                    className="flex items-center gap-1 rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-900"
                   >
                     <Pencil className="h-3.5 w-3.5" /> Edit
                   </button>

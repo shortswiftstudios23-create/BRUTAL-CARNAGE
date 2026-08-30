@@ -9,7 +9,6 @@ import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/permissions";
 import { reviewBankRequestSchema } from "@/lib/validators/money";
 import { applyBalanceDelta } from "@/lib/balance";
-import { getPersonalExpenseAllowance } from "@/lib/personalExpense";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await auth();
@@ -57,18 +56,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     });
 
     return NextResponse.json({ success: true, status: "REJECTED" });
-  }
-
-  if (bankRequest.category === "PERSONAL_EXPENSE") {
-    const { remaining } = await getPersonalExpenseAllowance(bankRequest.userId, bankRequest.id);
-    if (Number(bankRequest.amount) > remaining) {
-      return NextResponse.json(
-        {
-          error: `This would exceed the member's 10%-of-donations personal expense limit (only $${remaining.toLocaleString()} left). Their donation total or other requests may have changed since this was submitted.`,
-        },
-        { status: 409 }
-      );
-    }
   }
 
   const balance = await prisma.familyBalance.findUnique({ where: { id: "singleton" } });

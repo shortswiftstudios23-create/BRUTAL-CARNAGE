@@ -19,12 +19,14 @@ export default async function PromotionsPage() {
   ]);
 
   const currentLevel = rankLevel(session!.user.rank);
-  const nextRank = RANK_ORDER[currentLevel + 1] ?? null;
+  // Any rank above the member's current one is a valid request target —
+  // not just the immediate next step.
+  const eligibleRanks = RANK_ORDER.slice(currentLevel + 1);
 
   return (
     <>
       <Topbar pageTitle="Promotions" notificationCount={unreadCount} />
-      <main className="flex-1 overflow-y-auto p-6">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6">
         <PromotionsClient
           requests={requests.map((r) => ({
             id: r.id,
@@ -33,14 +35,12 @@ export default async function PromotionsPage() {
             toRank: r.toRank,
             status: r.status,
             statsSnapshot: r.statsSnapshot as Record<string, unknown>,
-            reason: r.reason,
-            rejectionNote: r.rejectionNote,
             createdAt: r.createdAt.toISOString(),
             isOwn: r.userId === session!.user.id,
           }))}
           canReview={canReview}
           canRequest={can(session!.user.rank, "canSubmitPromotionRequest")}
-          nextRank={nextRank}
+          eligibleRanks={eligibleRanks}
         />
       </main>
     </>

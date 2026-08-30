@@ -26,7 +26,7 @@ export default async function MarketplacePage() {
   return (
     <>
       <Topbar pageTitle="Marketplace" notificationCount={unreadCount} />
-      <main className="flex-1 overflow-y-auto p-6">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6">
         <MarketplaceClient
           currentUserId={session!.user.id}
           canListFamilyStock={canListFamilyStock}

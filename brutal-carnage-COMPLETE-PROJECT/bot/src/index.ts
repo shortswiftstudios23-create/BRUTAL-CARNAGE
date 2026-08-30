@@ -8,7 +8,6 @@ import * as guildMemberAdd from "./events/guildMemberAdd";
 import * as guildMemberUpdate from "./events/guildMemberUpdate";
 import * as messageReactionAdd from "./events/messageReactionAdd";
 import * as messageReactionRemove from "./events/messageReactionRemove";
-import * as messageCreate from "./events/messageCreate";
 import { startEventReminderJob } from "./jobs/eventReminder";
 import { startWeeklySummaryJob } from "./jobs/weeklySummary";
 
@@ -127,7 +126,6 @@ client.on(guildMemberAdd.name, guildMemberAdd.execute);
 client.on(guildMemberUpdate.name, guildMemberUpdate.execute);
 client.on(messageReactionAdd.name, messageReactionAdd.execute);
 client.on(messageReactionRemove.name, messageReactionRemove.execute);
-client.on(messageCreate.name, messageCreate.execute);
 
 client.on("shardDisconnect", (event, shardId) => {
   console.warn(`[bot] shard ${shardId} disconnected (code ${event?.code}). discord.js will try to reconnect.`);

@@ -16,10 +16,15 @@ const { auth } = NextAuth(authConfig);
 
 // Map route prefixes to the permission required to access them.
 // Anything not listed here just requires a signed-in, non-blacklisted user.
+// NOTE: "/promotions" is intentionally NOT gated here. Every member —
+// any rank — is allowed to open that page to submit a promotion
+// request; the page itself (and the API routes) decide server-side
+// whether a given viewer also gets the reviewer (approve/reject) view.
+// Gating the whole prefix here used to redirect everyone below
+// UNDER_DEPUTY straight to ?error=Forbidden before the page ever loaded.
 const ROUTE_PERMISSIONS: Record<string, PermissionKey> = {
   "/discipline": "canViewReports",
   "/discipline/blacklist": "canManageBlacklist",
-  "/promotions": "canReviewPromotions",
   "/announcements/manage": "canManageAnnouncements",
   "/inventory/pending": "canApprovePendingItems",
   "/money/requests": "canApproveBankRequests",
@@ -41,16 +46,6 @@ export default auth((req) => {
 
   if (isLoginPage) {
     return NextResponse.redirect(new URL("/dashboard", nextUrl));
-  }
-
-  // Force a password change before anything else for accounts still on
-  // a bot- or admin-issued temp password. /settings itself (and its own
-  // API route) must stay reachable or the redirect loops forever.
-  if (
-    session.user.mustChangePassword &&
-    !nextUrl.pathname.startsWith("/settings")
-  ) {
-    return NextResponse.redirect(new URL("/settings?forced=1", nextUrl));
   }
 
   const matchedPrefix = Object.keys(ROUTE_PERMISSIONS)

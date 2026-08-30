@@ -98,42 +98,6 @@ account, check you get a DM with login details, log in on the website).
 
 ---
 
-## Step 9 — Import the warehouse spreadsheet + link the 3 admin accounts
-
-This is a one-time step. **Important:** since your site is already live
-on Vercel (brutalcarnage.vercel.app) with real accounts and data in it,
-this needs to run against your PRODUCTION database — not a fresh local
-one — or it'll write the import into the wrong database and you won't
-see it on the live site.
-
-1. In Vercel: your project -> Settings -> Environment Variables -> copy
-   the value of `DATABASE_URL` (the production one).
-2. On your computer, open `apps/web/.env` and temporarily set
-   `DATABASE_URL` to that production value (make a note of what it was
-   before, if anything, so you can put it back after).
-3. In the `apps/web` terminal:
-   ```
-   npm run seed:warehouse
-   ```
-
-This will:
-- Link Deadly Mesbah's and Deadly Ocean's game IDs + Boss rank onto
-  their **existing** accounts (`mesbahhasin233813` and `stargamermj6063`)
-  — their usernames and passwords are left exactly as they are now.
-- Create a brand-new account for Deadly Khan (no login existed for him
-  yet) as Big Boss, and print his one-time temp password to the
-  terminal — **copy it the moment it prints**, that's the only time
-  it's shown. Hand it to him privately; he'll be forced to set his own
-  username/password on first login.
-- Import every donation and withdrawal row from the spreadsheet into
-  their history (dated correctly), and load the item catalog + current
-  stock from the Stock Reconciliation sheet.
-
-Safe to re-run — it won't duplicate accounts, items, or history if run
-more than once. Afterward, set `DATABASE_URL` in `apps/web/.env` back
-to whatever it was before (or just leave it — it's only read when you
-run commands locally, it doesn't affect what's deployed on Vercel).
-
 ## If something errors
 
 Copy the EXACT error message you see in the terminal and send it to

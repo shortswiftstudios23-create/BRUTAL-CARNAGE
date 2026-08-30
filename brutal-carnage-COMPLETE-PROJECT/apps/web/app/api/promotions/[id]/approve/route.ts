@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/permissions";
-import { syncDiscordRoleForPromotion, syncPromotionApprovalToDiscord } from "@/lib/discord";
+import { syncDiscordRoleForPromotion } from "@/lib/discord";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await auth();
@@ -72,33 +72,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     // we catch below and revert the DB rank so it never drifts from
     // Discord's actual role state.
     await syncDiscordRoleForPromotion(request.user.discordId, request.toRank);
-
-    // React ✅ on the original request message and post the approval
-    // record to the approvals channel. Best-effort: the promotion itself
-    // already succeeded above, so a Discord hiccup here shouldn't undo it.
-    try {
-      const reviewer = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { discordId: true },
-      });
-      const requesterGameId = await prisma.user.findUnique({
-        where: { id: request.userId },
-        select: { gameId: true },
-      });
-      if (reviewer) {
-        await syncPromotionApprovalToDiscord({
-          discordMessageId: request.discordMessageId,
-          discordId: request.user.discordId,
-          gameId: requesterGameId?.gameId ?? null,
-          fromRank: request.fromRank,
-          toRank: request.toRank,
-          reason: request.reason,
-          approverDiscordId: reviewer.discordId,
-        });
-      }
-    } catch (err) {
-      console.error("[promotions/approve] failed to sync approval to Discord:", err);
-    }
 
     return NextResponse.json({ success: true });
   } catch (err) {

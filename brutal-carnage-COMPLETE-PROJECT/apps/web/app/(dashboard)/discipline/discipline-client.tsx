@@ -98,7 +98,7 @@ export function DisciplineClient({
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <div className="flex gap-1 rounded-lg border border-panel-border bg-panel/70 p-1">
+        <div className="flex gap-1 rounded-lg border border-zinc-800 bg-zinc-950/60 p-1">
           <TabButton icon={ShieldAlert} label="Strikes" active={tab === "strikes"} onClick={() => setTab("strikes")} />
           <TabButton icon={FileWarning} label="Reports" active={tab === "reports"} onClick={() => setTab("reports")} />
           <TabButton icon={Ban} label="Blacklist" active={tab === "blacklist"} onClick={() => setTab("blacklist")} />
@@ -114,7 +114,7 @@ export function DisciplineClient({
       </div>
 
       {tab === "strikes" && (
-        <div className="rounded-lg border border-panel-border bg-panel/70">
+        <div className="rounded-lg border border-zinc-800 bg-zinc-950/60">
           {strikes.length === 0 ? (
             <p className="p-5 text-sm text-zinc-600">No strikes on record.</p>
           ) : (
@@ -141,7 +141,7 @@ export function DisciplineClient({
       )}
 
       {tab === "reports" && (
-        <div className="rounded-lg border border-panel-border bg-panel/70">
+        <div className="rounded-lg border border-zinc-800 bg-zinc-950/60">
           {reports.length === 0 ? (
             <p className="p-5 text-sm text-zinc-600">No reports filed.</p>
           ) : (
@@ -175,7 +175,7 @@ export function DisciplineClient({
                       <button
                         onClick={() => reviewReport(r.id, false)}
                         disabled={busyId === r.id}
-                        className="rounded-md border border-panel-border px-3 py-1.5 text-xs text-zinc-400 hover:bg-white/[0.04] disabled:opacity-50"
+                        className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-400 hover:bg-zinc-900 disabled:opacity-50"
                       >
                         Dismiss
                       </button>
@@ -189,7 +189,7 @@ export function DisciplineClient({
       )}
 
       {tab === "blacklist" && (
-        <div className="rounded-lg border border-panel-border bg-panel/70">
+        <div className="rounded-lg border border-zinc-800 bg-zinc-950/60">
           {blacklisted.length === 0 ? (
             <p className="p-5 text-sm text-zinc-600">No one is currently blacklisted.</p>
           ) : (
@@ -204,7 +204,7 @@ export function DisciplineClient({
                     <button
                       onClick={() => toggleBlacklist(b.id, false)}
                       disabled={busyId === b.id}
-                      className="rounded-md border border-panel-border px-3 py-1.5 text-xs text-zinc-300 hover:bg-white/[0.04] disabled:opacity-50"
+                      className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-900 disabled:opacity-50"
                     >
                       {busyId === b.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Remove from blacklist"}
                     </button>
@@ -252,7 +252,7 @@ function StatusPill({ status }: { status: Report["status"] }) {
   const map = {
     PENDING: "border-amber-800 bg-amber-950/40 text-amber-300",
     APPROVED: "border-red-800 bg-red-950/40 text-red-300",
-    REJECTED: "border-panel-border bg-white/[0.03] text-zinc-500",
+    REJECTED: "border-zinc-700 bg-zinc-900 text-zinc-500",
   };
   const label = { PENDING: "Pending", APPROVED: "Substantiated", REJECTED: "Dismissed" };
   return (
@@ -294,7 +294,7 @@ function StrikeForm({ members, onClose }: { members: Member[]; onClose: () => vo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="w-full max-w-md rounded-lg border border-panel-border bg-panel p-6 shadow-2xl">
+      <div className="w-full max-w-md rounded-lg border border-zinc-800 bg-zinc-950 p-6 shadow-2xl">
         <h2 className="mb-4 font-display text-lg tracking-wide text-zinc-100">Issue strike</h2>
 
         <div className="space-y-4">
@@ -303,7 +303,7 @@ function StrikeForm({ members, onClose }: { members: Member[]; onClose: () => vo
             <select
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
-              className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-100 outline-none focus:border-red-700"
+              className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-red-700"
             >
               <option value="">Select a member…</option>
               {members.map((m) => (
@@ -324,7 +324,7 @@ function StrikeForm({ members, onClose }: { members: Member[]; onClose: () => vo
                   onClick={() => setSeverity(s)}
                   className={cn(
                     "flex-1 rounded-md border py-2 text-xs uppercase tracking-wider",
-                    severity === s ? SEVERITY_STYLE[s] : "border-panel-border text-zinc-500 hover:bg-white/[0.04]"
+                    severity === s ? SEVERITY_STYLE[s] : "border-zinc-800 text-zinc-500 hover:bg-zinc-900"
                   )}
                 >
                   {s}
@@ -339,12 +339,12 @@ function StrikeForm({ members, onClose }: { members: Member[]; onClose: () => vo
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}
-              className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-100 outline-none focus:border-red-700"
+              className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-red-700"
             />
           </div>
 
           <div className="flex gap-2 pt-2">
-            <button onClick={onClose} className="flex-1 rounded-md border border-panel-border py-2 text-sm text-zinc-400 hover:bg-white/[0.04]">
+            <button onClick={onClose} className="flex-1 rounded-md border border-zinc-800 py-2 text-sm text-zinc-400 hover:bg-zinc-900">
               Cancel
             </button>
             <button

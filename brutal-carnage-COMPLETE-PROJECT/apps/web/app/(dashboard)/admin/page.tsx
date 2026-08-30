@@ -52,7 +52,7 @@ export default async function AdminPanelPage() {
         ? prisma.loan.findMany({
             where: { status: "PENDING" },
             orderBy: { createdAt: "desc" },
-            include: { user: { select: { username: true, rank: true } }, collateralItems: true },
+            include: { user: { select: { username: true, rank: true } } },
           })
         : Promise.resolve([]),
     ]);
@@ -60,7 +60,7 @@ export default async function AdminPanelPage() {
   return (
     <>
       <Topbar pageTitle="Admin panel" notificationCount={unreadCount} />
-      <main className="flex-1 overflow-y-auto p-6">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6">
         <AdminPanelClient
           canApprovePendingItems={can(rank, "canApprovePendingItems")}
           canApproveItemActions={can(rank, "canApproveItemActions")}
@@ -111,7 +111,6 @@ export default async function AdminPanelPage() {
             interestRate: Number(l.interestRate),
             reason: l.reason,
             createdAt: l.createdAt.toISOString(),
-            collateralItems: l.collateralItems.map((c) => ({ itemName: c.itemName, quantity: c.quantity })),
           }))}
         />
       </main>

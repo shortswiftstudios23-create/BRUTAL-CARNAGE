@@ -12,8 +12,6 @@ interface MyLoan {
   principal: number;
   amountOwed: number;
   interestRate: number;
-  dueAt?: string | null;
-  collateralItems?: { id: string; itemName: string; quantity: number }[];
 }
 
 export function MyLoanCard({ loan }: { loan: MyLoan }) {
@@ -24,12 +22,7 @@ export function MyLoanCard({ loan }: { loan: MyLoan }) {
   if (loan.status === "PENDING") {
     return (
       <div className="mb-4 rounded-lg border border-yellow-900/50 bg-yellow-950/20 p-4 text-sm text-yellow-300">
-        <p>Your loan request for ${loan.principal.toLocaleString()} is waiting on approval.</p>
-        {loan.collateralItems && loan.collateralItems.length > 0 && (
-          <p className="mt-1 text-xs text-yellow-400/70">
-            Offered as collateral: {loan.collateralItems.map((c) => `${c.quantity}× ${c.itemName}`).join(", ")}
-          </p>
-        )}
+        Your loan request for ${loan.principal.toLocaleString()} is waiting on approval.
       </div>
     );
   }
@@ -67,14 +60,6 @@ export function MyLoanCard({ loan }: { loan: MyLoan }) {
         <span className="text-zinc-400">Active loan · {(loan.interestRate * 100).toFixed(0)}% interest, every 5 days</span>
         <span className="font-medium text-red-300">You owe ${loan.amountOwed.toLocaleString()}</span>
       </div>
-      {(loan.dueAt || (loan.collateralItems && loan.collateralItems.length > 0)) && (
-        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500">
-          {loan.dueAt && <span>Due {new Date(loan.dueAt).toLocaleDateString()}</span>}
-          {loan.collateralItems && loan.collateralItems.length > 0 && (
-            <span>Collateral: {loan.collateralItems.map((c) => `${c.quantity}× ${c.itemName}`).join(", ")}</span>
-          )}
-        </div>
-      )}
       <form onSubmit={repay} className="mt-3 flex gap-2">
         <div className="relative flex-1">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">$</span>
@@ -84,7 +69,7 @@ export function MyLoanCard({ loan }: { loan: MyLoan }) {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="Repayment amount"
-            className="w-full rounded-md border border-panel-border bg-white/[0.03] py-2 pl-7 pr-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+            className="w-full rounded-md border border-zinc-800 bg-zinc-900 py-2 pl-7 pr-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
           />
         </div>
         <button

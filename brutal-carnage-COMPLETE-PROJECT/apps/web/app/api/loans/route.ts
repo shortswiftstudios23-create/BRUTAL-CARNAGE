@@ -44,17 +44,7 @@ export async function POST(req: NextRequest) {
       reason: parsed.data.reason,
       userId: session.user.id,
       status: "PENDING",
-      collateralItems: parsed.data.collateralItems.length
-        ? {
-            create: parsed.data.collateralItems.map((c) => ({
-              itemId: c.itemId,
-              itemName: c.itemName,
-              quantity: c.quantity,
-            })),
-          }
-        : undefined,
     },
-    include: { collateralItems: true },
   });
 
   return NextResponse.json({ loan }, { status: 201 });

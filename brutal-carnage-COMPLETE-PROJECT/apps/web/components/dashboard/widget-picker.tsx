@@ -64,7 +64,7 @@ export function WidgetPicker({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 rounded-md border border-panel-border px-3 py-1.5 text-xs text-zinc-400 hover:bg-white/[0.04] hover:text-zinc-200"
+        className="flex items-center gap-2 rounded-md border border-zinc-800 px-3 py-1.5 text-xs text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
       >
         <Settings2 className="h-3.5 w-3.5" />
         Customize
@@ -72,7 +72,7 @@ export function WidgetPicker({
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-md rounded-lg border border-panel-border bg-panel p-5">
+          <div className="w-full max-w-md rounded-lg border border-zinc-800 bg-zinc-950 p-5">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-sm font-medium text-zinc-200">Customize dashboard</h3>
               <button onClick={() => setOpen(false)} className="text-zinc-500 hover:text-zinc-200">
@@ -93,7 +93,7 @@ export function WidgetPicker({
                     onDragStart={() => setDragIndex(i)}
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={() => onDrop(i)}
-                    className="flex items-center gap-3 rounded-md border border-panel-border bg-white/[0.03] px-3 py-2"
+                    className="flex items-center gap-3 rounded-md border border-zinc-800 bg-zinc-900/50 px-3 py-2"
                   >
                     <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-zinc-600" />
                     <div className="min-w-0 flex-1">
@@ -103,7 +103,7 @@ export function WidgetPicker({
                     <button
                       onClick={() => toggle(pref.id)}
                       className={`h-5 w-9 shrink-0 rounded-full transition-colors ${
-                        pref.enabled ? "bg-red-700" : "bg-white/[0.04]"
+                        pref.enabled ? "bg-red-700" : "bg-zinc-800"
                       }`}
                     >
                       <span

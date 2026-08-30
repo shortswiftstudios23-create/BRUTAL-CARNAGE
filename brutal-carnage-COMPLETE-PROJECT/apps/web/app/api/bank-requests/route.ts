@@ -9,7 +9,6 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/permissions";
 import { createBankRequestSchema } from "@/lib/validators/money";
-import { getPersonalExpenseAllowance } from "@/lib/personalExpense";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -23,29 +22,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  // Personal expenses are capped at 10% of what the member has actually
-  // donated (lifetime, approved only), minus whatever of that they've
-  // already taken out. General requests have no such cap.
-  if (parsed.data.category === "PERSONAL_EXPENSE") {
-    const { remaining, cap } = await getPersonalExpenseAllowance(session.user.id);
-    if (parsed.data.amount > remaining) {
-      return NextResponse.json(
-        {
-          error:
-            cap === 0
-              ? "You haven't donated anything yet, so there's no personal-expense allowance to draw from."
-              : `You can request up to $${remaining.toLocaleString()} more as a personal expense (10% of your lifetime donations, minus what you've already taken).`,
-        },
-        { status: 400 }
-      );
-    }
-  }
-
   const request = await prisma.bankRequest.create({
     data: {
       amount: parsed.data.amount,
       reason: parsed.data.reason,
-      category: parsed.data.category,
       userId: session.user.id,
       status: "PENDING",
     },

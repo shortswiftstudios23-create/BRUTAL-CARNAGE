@@ -1,14 +1,13 @@
 // components/layout/sidebar.tsx
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
 import { Rank } from "@prisma/client";
 import { can } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
+import { useSidebar } from "@/components/layout/sidebar-context";
 import {
   LayoutDashboard,
   Package,
@@ -24,8 +23,7 @@ import {
   Users,
   ClipboardCheck,
   Store,
-  Settings,
-  LogOut,
+  X,
 } from "lucide-react";
 
 interface NavItem {
@@ -76,118 +74,91 @@ export function Sidebar({
   avatarUrl?: string | null;
 }) {
   const pathname = usePathname();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  // Close the account menu on outside click / route change, same as any
-  // normal dropdown — otherwise it'd stay open forever once toggled.
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-  useEffect(() => setMenuOpen(false), [pathname]);
-
-  const items = NAV_ITEMS.filter((item) => !item.visible || item.visible(userRank));
+  const { isOpen, close } = useSidebar();
 
   return (
-    <aside className="relative flex h-screen w-64 flex-col border-r border-panel-border bg-panel">
-      {/* Faint top-down crimson wash behind the crest — signals "brand"
-          without printing a giant logo across the whole rail. */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-crimson-dark/15 to-transparent" />
+    <>
+      {/* Mobile-only backdrop — tapping it closes the drawer */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+          onClick={close}
+          aria-hidden="true"
+        />
+      )}
 
-      <div className="relative flex items-center gap-3 border-b border-panel-border px-5 py-5">
-        <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md border border-crimson-dark/50 shadow-glow-crimson">
-          <Image src="/logo.png" alt="Brutal Carnage" fill className="object-cover" sizes="40px" priority />
-        </div>
-        <div className="min-w-0 leading-tight">
-          <p className="truncate font-display text-base tracking-wide text-zinc-100">
-            BRUTAL CARNAGE
-          </p>
-          <p className="text-[10px] uppercase tracking-widest2 text-zinc-500">Grand RP · Family</p>
-        </div>
-      </div>
-
-      <nav className="relative flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
-        {items.map((item) => {
-          const isActive = pathname.startsWith(item.href);
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all",
-                isActive
-                  ? "bg-gradient-to-r from-crimson-dark/25 to-transparent text-red-100"
-                  : "text-zinc-400 hover:bg-white/[0.04] hover:text-zinc-100"
-              )}
-            >
-              {isActive && (
-                <span className="absolute inset-y-1 left-0 w-[3px] rounded-full bg-crimson shadow-glow-crimson" />
-              )}
-              <Icon
-                className={cn(
-                  "h-4 w-4 shrink-0 transition-colors",
-                  isActive ? "text-crimson-light" : "text-zinc-500 group-hover:text-zinc-300"
-                )}
-              />
-              <span className="truncate">{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="relative border-t border-panel-border p-3" ref={menuRef}>
-        {menuOpen && (
-          <div className="absolute bottom-full left-3 right-3 z-20 mb-2 overflow-hidden rounded-lg border border-panel-border bg-panel shadow-panel">
-            <Link
-              href="/settings"
-              className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-zinc-300 transition-colors hover:bg-white/[0.05] hover:text-zinc-100"
-              onClick={() => setMenuOpen(false)}
-            >
-              <Settings className="h-4 w-4 text-zinc-500" />
-              Account settings
-            </Link>
-            <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="flex w-full items-center gap-2.5 border-t border-panel-border px-3 py-2.5 text-left text-sm text-red-400 transition-colors hover:bg-red-950/30 hover:text-red-300"
-            >
-              <LogOut className="h-4 w-4" />
-              Log out
-            </button>
-          </div>
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex h-screen w-72 max-w-[85vw] flex-col border-r border-zinc-800 bg-[#0A0A0B] transition-transform duration-200 ease-out",
+          "lg:static lg:z-auto lg:w-64 lg:max-w-none lg:translate-x-0",
+          isOpen ? "translate-x-0" : "-translate-x-full"
         )}
+      >
+        <div className="flex items-center gap-3 border-b border-zinc-800 px-5 py-5">
+          <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded border border-red-800/60">
+            <Image src="/logo.png" alt="Brutal Carnage" fill className="object-cover" />
+          </div>
+          <div className="min-w-0 flex-1 leading-tight">
+            <p className="truncate font-display text-sm tracking-wide text-zinc-100">BRUTAL CARNAGE</p>
+            <p className="truncate text-[10px] uppercase tracking-widest text-zinc-500">Family system</p>
+          </div>
+          <button
+            onClick={close}
+            aria-label="Close menu"
+            className="rounded-md p-1.5 text-zinc-500 hover:bg-zinc-900 hover:text-zinc-200 lg:hidden"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
 
-        <button
-          onClick={() => setMenuOpen((v) => !v)}
-          className="group flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-white/[0.04]"
-        >
-          <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-panel-border bg-white/[0.04] text-xs font-semibold text-zinc-300">
-            {avatarUrl ? (
-              <Image src={avatarUrl} alt={username} fill className="object-cover" sizes="36px" />
-            ) : (
-              username.slice(0, 2).toUpperCase()
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm text-zinc-200">{username}</p>
-            <p className="truncate text-[11px] uppercase tracking-wide text-zinc-500">
-              {userRank.replace(/_/g, " ")}
-            </p>
-          </div>
-          <ChevronsUpDown
-            className={cn(
-              "h-3.5 w-3.5 shrink-0 text-zinc-600 transition-transform group-hover:text-zinc-400",
-              menuOpen && "rotate-180"
-            )}
-          />
-        </button>
-      </div>
-    </aside>
+        <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
+          {NAV_ITEMS.filter((item) => !item.visible || item.visible(userRank)).map((item) => {
+            const isActive = pathname.startsWith(item.href);
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={close}
+                className={cn(
+                  "group flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                  isActive
+                    ? "bg-red-950/40 text-red-200"
+                    : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100"
+                )}
+              >
+                <Icon
+                  className={cn(
+                    "h-4 w-4 shrink-0",
+                    isActive ? "text-red-400" : "text-zinc-500 group-hover:text-zinc-300"
+                  )}
+                />
+                {item.label}
+                {isActive && (
+                  <span className="ml-auto h-1.5 w-1.5 rounded-full bg-red-500 shadow-[0_0_6px_1px_rgba(220,38,38,0.6)]" />
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="border-t border-zinc-800 p-3">
+          <button className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-zinc-900">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-xs font-medium text-zinc-300">
+              {avatarUrl ? (
+                <Image src={avatarUrl} alt={username} width={32} height={32} className="rounded-full" />
+              ) : (
+                username.slice(0, 2).toUpperCase()
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm text-zinc-200">{username}</p>
+              <p className="truncate text-[11px] text-zinc-500">{userRank.replace(/_/g, " ")}</p>
+            </div>
+            <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-zinc-600" />
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }

@@ -76,8 +76,8 @@ export function TotalsClient({ rows, canEdit }: { rows: Row[]; canEdit: boolean 
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-panel-border">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-lg border border-panel-border">
+        <table className="w-full min-w-[640px] text-sm">
           <thead className="bg-panel/90 text-xs uppercase tracking-wider text-zinc-500">
             <tr>
               <th className="px-4 py-2 text-left">Item</th>

@@ -62,18 +62,6 @@ enum ItemActionType {
   ORDER
 }
 
-// Only meaningful on TAKE actions. PERSONAL = the member is taking the
-// item for themselves, so its value counts against them (deducted from
-// their net contribution on the leaderboard/performance page).
-// FOR_SALE = the item is being pulled to list on the marketplace on the
-// family's behalf (see ResaleListing.isFamilyStock) — stock still leaves
-// the warehouse, but it's a business action, not a personal withdrawal,
-// so it must NOT count against the member.
-enum ItemActionPurpose {
-  PERSONAL
-  FOR_SALE
-}
-
 enum EventStatus {
   SCHEDULED
   LIVE
@@ -115,29 +103,12 @@ enum ResaleListingStatus {
 
 model User {
   id                String   @id @default(cuid())
-  // Nullable + no longer @unique at the DB level for real Discord ids only
-  // in spirit — manually-created accounts (see canCreateMemberManually)
-  // don't have a real Discord id yet, so they get a generated placeholder
-  // like "manual_<cuid>" here. Still unique so lookups/joins keep working;
-  // it just isn't guaranteed to be a *real* Discord snowflake until
-  // someone (the bot) links the account for real.
   discordId         String   @unique
-  username          String   @unique
+  username          String
   discordAvatar     String?
   email             String?  @unique
 
-  // In-game/warehouse identifier (e.g. the "Player ID" column in the
-  // warehouse spreadsheet). Separate from discordId/username since it's
-  // assigned by the game, not Discord or the website. Nullable — most
-  // accounts provisioned via the bot won't have this set.
-  gameId            String?  @unique
-
-  // True for accounts created by an admin via the manual create-member
-  // flow instead of the Discord bot's auto-provisioning on join.
-  createdManually   Boolean  @default(false)
-
-  // Website credentials (set by bot on role-grant, or by an admin for
-  // manually-created accounts; always hashed)
+  // Website credentials (set by bot on role-grant, hashed)
   passwordHash      String?
   mustChangePassword Boolean @default(true)
 
@@ -199,7 +170,6 @@ model Item {
   wishlistedBy   WishlistItem[]
   soldInTransactions Transaction[]
   resaleListings ResaleListing[]
-  loanCollateralOf LoanCollateralItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -235,11 +205,6 @@ model ItemAction {
   quantity   Int
   status     ApprovalStatus @default(PENDING)
   note       String?
-
-  // Only set/relevant when type = TAKE. Defaults to PERSONAL so existing
-  // rows (and DONATE/ORDER rows, which ignore this field) behave exactly
-  // as before the field existed.
-  purpose    ItemActionPurpose @default(PERSONAL)
 
   reviewedById String?
   reviewedAt   DateTime?
@@ -361,40 +326,12 @@ model Loan {
   lastAccrualAt DateTime?
   paidAt        DateTime?
 
-  // When the loan is expected to be repaid by. Set at approval time
-  // (see /api/loans/[id]/review). Nullable for loans approved before
-  // this field existed, and while still PENDING.
-  dueAt         DateTime?
-
   createdAt DateTime @default(now())
 
-  repayments      LoanRepayment[]
-  collateralItems LoanCollateralItem[]
+  repayments LoanRepayment[]
 
   @@index([status])
   @@index([userId])
-}
-
-// Items a member hands over to the family in exchange for (or as
-// security against) a loan, instead of / in addition to cash repayment.
-// Shown on the member's performance/loan detail view so leadership can
-// see exactly what was put up as collateral for a given loan.
-model LoanCollateralItem {
-  id       String  @id @default(cuid())
-  loan     Loan    @relation(fields: [loanId], references: [id])
-  loanId   String
-
-  // Linked when the collateral is a real catalog item (so it can be
-  // valued consistently); itemName is kept regardless as a stable label
-  // even if the catalog item is later renamed or removed.
-  item     Item?   @relation(fields: [itemId], references: [id])
-  itemId   String?
-  itemName String
-  quantity Int     @default(1)
-
-  createdAt DateTime @default(now())
-
-  @@index([loanId])
 }
 
 model LoanRepayment {
@@ -407,17 +344,11 @@ model LoanRepayment {
   @@index([loanId])
 }
 
-enum BankRequestCategory {
-  GENERAL
-  PERSONAL_EXPENSE
-}
-
 model BankRequest {
-  id           String              @id @default(cuid())
-  amount       Decimal             @db.Decimal(12, 2)
+  id           String         @id @default(cuid())
+  amount       Decimal        @db.Decimal(12, 2)
   reason       String
-  category     BankRequestCategory @default(GENERAL)
-  status       ApprovalStatus      @default(PENDING)
+  status       ApprovalStatus @default(PENDING)
 
   user         User   @relation("BankRequestsByUser", fields: [userId], references: [id])
   userId       String
@@ -545,20 +476,11 @@ model PromotionRequest {
   userId        String
   fromRank      Rank
   toRank        Rank
-  reason        String?
   statsSnapshot Json
   status        ApprovalStatus @default(PENDING)
   reviewedById  String?
   reviewedAt    DateTime?
   rejectionNote String?
-
-  // The Discord message (in the promotion-requests channel) that mirrors
-  // this request. Set whichever side the request originated on: the
-  // website posts a new message and stores its id here; a request
-  // typed directly in Discord is parsed into a row here with the
-  // original message's id. Lets approval react ✅ on the right message
-  // no matter where the request came from.
-  discordMessageId String? @unique
 
   createdAt DateTime @default(now())
 

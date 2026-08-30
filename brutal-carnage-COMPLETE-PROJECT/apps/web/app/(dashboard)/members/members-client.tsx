@@ -4,16 +4,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import Link from "next/link";
-import { Search, Ban, ShieldCheck, StickyNote, Loader2, X, UserPlus, Copy, Check, BarChart3, KeyRound } from "lucide-react";
+import { Search, Ban, ShieldCheck, StickyNote, Loader2, X } from "lucide-react";
 import { RankBadge } from "@/components/layout/rank-badge";
 import { Rank } from "@prisma/client";
-
-interface LoanStatusInfo {
-  status: "PENDING" | "ACTIVE";
-  amountOwed: number;
-  dueAt: string | null;
-}
 
 interface Member {
   id: string;
@@ -25,11 +18,6 @@ interface Member {
   lastActiveAt: string;
   joinedFamilyAt: string;
   isInactive: boolean;
-  moneyDonated?: number;
-  itemsDonatedValue?: number;
-  itemsTakenValue?: number;
-  moneyWithdrawn?: number;
-  loanStatus?: LoanStatusInfo | null;
 }
 
 interface Note {
@@ -48,25 +36,16 @@ export function MembersClient({
   members,
   canManageBlacklist,
   canViewPrivateNotes,
-  canCreateMemberManually,
-  canViewMemberPerformanceDetail,
-  canResetMemberPassword,
-  canViewFinancials = false,
 }: {
   members: Member[];
   canManageBlacklist: boolean;
   canViewPrivateNotes: boolean;
-  canCreateMemberManually: boolean;
-  canViewMemberPerformanceDetail: boolean;
-  canResetMemberPassword: boolean;
-  canViewFinancials?: boolean;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [rankFilter, setRankFilter] = useState<Rank | "ALL">("ALL");
   const [showBlacklistedOnly, setShowBlacklistedOnly] = useState(false);
   const [activeMember, setActiveMember] = useState<Member | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const filtered = useMemo(() => {
     return members.filter((m) => {
@@ -86,13 +65,13 @@ export function MembersClient({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search members…"
-            className="w-full rounded-md border border-panel-border bg-white/[0.03] py-2 pl-9 pr-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+            className="w-full rounded-md border border-zinc-800 bg-zinc-900 py-2 pl-9 pr-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
           />
         </div>
         <select
           value={rankFilter}
           onChange={(e) => setRankFilter(e.target.value as Rank | "ALL")}
-          className="rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+          className="rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
         >
           <option value="ALL">All ranks</option>
           {RANK_OPTIONS.map((r) => (
@@ -104,38 +83,26 @@ export function MembersClient({
             type="checkbox"
             checked={showBlacklistedOnly}
             onChange={(e) => setShowBlacklistedOnly(e.target.checked)}
-            className="rounded border-panel-border bg-white/[0.03]"
+            className="rounded border-zinc-700 bg-zinc-900"
           />
           Blacklisted only
         </label>
-        {canCreateMemberManually && (
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-red-800 bg-red-950/40 px-3 py-2 text-sm text-red-300 hover:bg-red-950/60"
-          >
-            <UserPlus className="h-4 w-4" />
-            Create member
-          </button>
-        )}
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-panel-border">
-        <table className="w-full text-sm">
-          <thead className="bg-panel/90 text-xs uppercase tracking-wider text-zinc-500">
+      <div className="overflow-x-auto rounded-lg border border-zinc-800">
+        <table className="w-full min-w-[640px] text-sm">
+          <thead className="bg-zinc-950/80 text-xs uppercase tracking-wider text-zinc-500">
             <tr>
               <th className="px-4 py-2 text-left">Member</th>
               <th className="px-4 py-2 text-left">Rank</th>
               <th className="px-4 py-2 text-left">Status</th>
-              {canViewFinancials && <th className="px-4 py-2 text-right">Donated</th>}
-              {canViewFinancials && <th className="px-4 py-2 text-right">Received</th>}
-              {canViewFinancials && <th className="px-4 py-2 text-left">Loan</th>}
               <th className="px-4 py-2 text-left">Last active</th>
               <th className="px-4 py-2 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-800">
             {filtered.map((m) => (
-              <tr key={m.id} className="bg-panel/50">
+              <tr key={m.id} className="bg-zinc-950/40">
                 <td className="px-4 py-2 text-zinc-200">{m.username}</td>
                 <td className="px-4 py-2"><RankBadge rank={m.rank} /></td>
                 <td className="px-4 py-2">
@@ -144,68 +111,25 @@ export function MembersClient({
                   ) : m.isInactive ? (
                     <span className="rounded border border-amber-800 bg-amber-950/40 px-2 py-0.5 text-xs text-amber-300">Inactive</span>
                   ) : (
-                    <span className="rounded border border-panel-border bg-white/[0.03] px-2 py-0.5 text-xs text-zinc-400">Active</span>
+                    <span className="rounded border border-zinc-700 bg-zinc-900 px-2 py-0.5 text-xs text-zinc-400">Active</span>
                   )}
                 </td>
-                {canViewFinancials && (
-                  <td className="px-4 py-2 text-right">
-                    <p className="text-emerald-400">
-                      ${(( m.moneyDonated ?? 0) + (m.itemsDonatedValue ?? 0)).toLocaleString()}
-                    </p>
-                    {(m.itemsTakenValue ?? 0) > 0 && (
-                      <p className="text-xs text-red-500/80">-${(m.itemsTakenValue ?? 0).toLocaleString()} taken</p>
-                    )}
-                  </td>
-                )}
-                {canViewFinancials && (
-                  <td className="px-4 py-2 text-right text-zinc-400">
-                    ${(m.moneyWithdrawn ?? 0).toLocaleString()}
-                  </td>
-                )}
-                {canViewFinancials && (
-                  <td className="px-4 py-2">
-                    {m.loanStatus ? (
-                      <span
-                        className={`rounded border px-2 py-0.5 text-xs ${
-                          m.loanStatus.status === "ACTIVE"
-                            ? "border-red-900 bg-red-950/40 text-red-300"
-                            : "border-yellow-900 bg-yellow-950/40 text-yellow-300"
-                        }`}
-                        title={m.loanStatus.dueAt ? `Due ${new Date(m.loanStatus.dueAt).toLocaleDateString()}` : undefined}
-                      >
-                        {m.loanStatus.status === "ACTIVE" ? `Owes $${m.loanStatus.amountOwed.toLocaleString()}` : "Loan pending"}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-zinc-600">—</span>
-                    )}
-                  </td>
-                )}
                 <td className="px-4 py-2 text-zinc-500">{new Date(m.lastActiveAt).toLocaleDateString()}</td>
                 <td className="px-4 py-2 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    {canViewMemberPerformanceDetail && (
-                      <Link
-                        href={`/performance/${m.id}`}
-                        className="flex items-center gap-1 rounded-md border border-panel-border px-3 py-1 text-xs text-zinc-300 hover:bg-white/[0.04]"
-                      >
-                        <BarChart3 className="h-3 w-3" /> Performance
-                      </Link>
-                    )}
-                    {(canManageBlacklist || canViewPrivateNotes || canResetMemberPassword) && (
-                      <button
-                        onClick={() => setActiveMember(m)}
-                        className="rounded-md border border-panel-border px-3 py-1 text-xs text-zinc-300 hover:bg-white/[0.04]"
-                      >
-                        Manage
-                      </button>
-                    )}
-                  </div>
+                  {(canManageBlacklist || canViewPrivateNotes) && (
+                    <button
+                      onClick={() => setActiveMember(m)}
+                      className="rounded-md border border-zinc-700 px-3 py-1 text-xs text-zinc-300 hover:bg-zinc-900"
+                    >
+                      Manage
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={canViewFinancials ? 8 : 5} className="px-4 py-6 text-center text-zinc-600">No members match those filters.</td>
+                <td colSpan={5} className="px-4 py-6 text-center text-zinc-600">No members match those filters.</td>
               </tr>
             )}
           </tbody>
@@ -217,153 +141,10 @@ export function MembersClient({
           member={activeMember}
           canManageBlacklist={canManageBlacklist}
           canViewPrivateNotes={canViewPrivateNotes}
-          canResetMemberPassword={canResetMemberPassword}
           onClose={() => setActiveMember(null)}
           onChanged={() => router.refresh()}
         />
       )}
-
-      {showCreateModal && (
-        <CreateMemberModal
-          onClose={() => setShowCreateModal(false)}
-          onCreated={() => router.refresh()}
-        />
-      )}
-    </div>
-  );
-}
-
-const CREATE_RANK_OPTIONS: Rank[] = RANK_OPTIONS;
-
-function CreateMemberModal({
-  onClose,
-  onCreated,
-}: {
-  onClose: () => void;
-  onCreated: () => void;
-}) {
-  const [busy, setBusy] = useState(false);
-  const [username, setUsername] = useState("");
-  const [gameId, setGameId] = useState("");
-  const [rank, setRank] = useState<Rank>("NOOB");
-  const [result, setResult] = useState<{ username: string; tempPassword: string } | null>(null);
-  const [copied, setCopied] = useState(false);
-
-  async function submit() {
-    if (username.trim().length < 3) {
-      toast.error("Username must be at least 3 characters");
-      return;
-    }
-    setBusy(true);
-    try {
-      const res = await fetch("/api/admin/create-member", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: username.trim(), rank, gameId: gameId.trim() || undefined }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error?.formErrors?.[0] ?? data.error ?? "Couldn't create member");
-        return;
-      }
-      setResult({ username: data.user.username, tempPassword: data.tempPassword });
-      onCreated();
-    } catch {
-      toast.error("Couldn't create member");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function copyCreds() {
-    if (!result) return;
-    await navigator.clipboard.writeText(`Username: ${result.username}\nPassword: ${result.tempPassword}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-lg border border-panel-border bg-panel p-5"
-      >
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-medium text-zinc-100">Create member</h3>
-          <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        {result ? (
-          <div className="space-y-4">
-            <p className="text-xs text-amber-400">
-              This password is shown once and never stored — copy it now and hand it to the member directly.
-              They'll be required to change it on first login.
-            </p>
-            <div className="rounded-md border border-panel-border bg-white/[0.03] p-3 text-sm">
-              <p className="text-zinc-500">Username</p>
-              <p className="mb-2 text-zinc-100">{result.username}</p>
-              <p className="text-zinc-500">Temporary password</p>
-              <p className="font-mono text-zinc-100">{result.tempPassword}</p>
-            </div>
-            <button
-              onClick={copyCreds}
-              className="flex w-full items-center justify-center gap-2 rounded-md border border-panel-border py-2 text-sm text-zinc-300 hover:bg-white/[0.04]"
-            >
-              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              {copied ? "Copied" : "Copy credentials"}
-            </button>
-            <button
-              onClick={onClose}
-              className="w-full rounded-md bg-red-800 py-2 text-sm text-white hover:bg-red-700"
-            >
-              Done
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div>
-              <label className="mb-1 block text-xs text-zinc-500">Username</label>
-              <input
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="e.g. deadly_khan"
-                className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs text-zinc-500">Game ID (optional)</label>
-              <input
-                value={gameId}
-                onChange={(e) => setGameId(e.target.value)}
-                placeholder="e.g. 95900"
-                className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs text-zinc-500">Rank</label>
-              <select
-                value={rank}
-                onChange={(e) => setRank(e.target.value as Rank)}
-                className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
-              >
-                {CREATE_RANK_OPTIONS.map((r) => (
-                  <option key={r} value={r}>{r.replace(/_/g, " ")}</option>
-                ))}
-              </select>
-            </div>
-            <button
-              onClick={submit}
-              disabled={busy}
-              className="flex w-full items-center justify-center gap-2 rounded-md bg-red-800 py-2 text-sm text-white hover:bg-red-700 disabled:opacity-50"
-            >
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
-              Create + generate password
-            </button>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
@@ -372,14 +153,12 @@ function MemberModal({
   member,
   canManageBlacklist,
   canViewPrivateNotes,
-  canResetMemberPassword,
   onClose,
   onChanged,
 }: {
   member: Member;
   canManageBlacklist: boolean;
   canViewPrivateNotes: boolean;
-  canResetMemberPassword: boolean;
   onClose: () => void;
   onChanged: () => void;
 }) {
@@ -388,9 +167,6 @@ function MemberModal({
   const [notes, setNotes] = useState<Note[] | null>(null);
   const [notesLoading, setNotesLoading] = useState(false);
   const [newNote, setNewNote] = useState("");
-  const [resetResult, setResetResult] = useState<{ username: string; tempPassword: string } | null>(null);
-  const [resetCopied, setResetCopied] = useState(false);
-  const [confirmingReset, setConfirmingReset] = useState(false);
 
   async function loadNotes() {
     if (!canViewPrivateNotes || notes !== null) return;
@@ -432,28 +208,6 @@ function MemberModal({
     }
   }
 
-  async function resetPassword() {
-    setBusy(true);
-    try {
-      const res = await fetch(`/api/members/${member.id}/reset-password`, { method: "POST" });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setResetResult({ username: data.username, tempPassword: data.tempPassword });
-      setConfirmingReset(false);
-    } catch {
-      toast.error("Couldn't reset password");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function copyResetResult() {
-    if (!resetResult) return;
-    await navigator.clipboard.writeText(`Username: ${resetResult.username}\nPassword: ${resetResult.tempPassword}`);
-    setResetCopied(true);
-    setTimeout(() => setResetCopied(false), 2000);
-  }
-
   async function addNote() {
     if (newNote.trim().length < 3) return;
     setBusy(true);
@@ -479,7 +233,7 @@ function MemberModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-lg border border-panel-border bg-panel p-5"
+        className="w-full max-w-md rounded-lg border border-zinc-800 bg-zinc-950 p-5"
       >
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-sm font-medium text-zinc-100">{member.username}</h3>
@@ -489,7 +243,7 @@ function MemberModal({
         </div>
 
         {canManageBlacklist && (
-          <div className="mb-5 space-y-2 border-b border-panel-border pb-5">
+          <div className="mb-5 space-y-2 border-b border-zinc-800 pb-5">
             {member.isBlacklisted ? (
               <>
                 <p className="text-xs text-zinc-500">Blacklisted: {member.blacklistReason || "no reason given"}</p>
@@ -508,7 +262,7 @@ function MemberModal({
                   value={blacklistReason}
                   onChange={(e) => setBlacklistReason(e.target.value)}
                   placeholder="Reason for blacklisting…"
-                  className="w-full rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+                  className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
                 />
                 <button
                   onClick={() => toggleBlacklist(true)}
@@ -519,57 +273,6 @@ function MemberModal({
                   Blacklist member
                 </button>
               </>
-            )}
-          </div>
-        )}
-
-        {canResetMemberPassword && (
-          <div className="mb-5 space-y-2 border-b border-panel-border pb-5">
-            {resetResult ? (
-              <div className="rounded-md border border-green-800 bg-green-950/30 p-3 text-xs">
-                <p className="mb-2 text-green-300">
-                  This password is shown once and never stored — copy it now and hand it to {resetResult.username} directly.
-                </p>
-                <p className="text-zinc-500">Temporary password</p>
-                <p className="font-mono text-zinc-100">{resetResult.tempPassword}</p>
-                <button
-                  onClick={copyResetResult}
-                  className="mt-2 flex items-center gap-1 rounded-md border border-panel-border px-2 py-1 text-zinc-300 hover:bg-white/[0.04]"
-                >
-                  {resetCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                  {resetCopied ? "Copied" : "Copy username + password"}
-                </button>
-              </div>
-            ) : confirmingReset ? (
-              <>
-                <p className="text-xs text-zinc-500">
-                  This immediately invalidates {member.username}&apos;s current password. They&apos;ll need the new one to log back in.
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={resetPassword}
-                    disabled={busy}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-md border border-amber-800 bg-amber-950/40 py-2 text-sm text-amber-300 hover:bg-amber-950/60 disabled:opacity-50"
-                  >
-                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
-                    Confirm reset
-                  </button>
-                  <button
-                    onClick={() => setConfirmingReset(false)}
-                    className="rounded-md border border-panel-border px-3 py-2 text-sm text-zinc-300 hover:bg-white/[0.04]"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </>
-            ) : (
-              <button
-                onClick={() => setConfirmingReset(true)}
-                className="flex w-full items-center justify-center gap-2 rounded-md border border-panel-border px-3 py-2 text-sm text-zinc-300 hover:bg-white/[0.04]"
-              >
-                <KeyRound className="h-4 w-4" />
-                Reset password
-              </button>
             )}
           </div>
         )}
@@ -591,7 +294,7 @@ function MemberModal({
 
             <div className="mb-3 max-h-40 space-y-2 overflow-y-auto">
               {notes?.map((n) => (
-                <div key={n.id} className="rounded-md border border-panel-border bg-white/[0.03] p-2 text-xs">
+                <div key={n.id} className="rounded-md border border-zinc-800 bg-zinc-900/50 p-2 text-xs">
                   <p className="text-zinc-300">{n.content}</p>
                   <p className="mt-1 text-zinc-600">— {n.author.username}, {new Date(n.createdAt).toLocaleDateString()}</p>
                 </div>
@@ -604,12 +307,12 @@ function MemberModal({
                 value={newNote}
                 onChange={(e) => setNewNote(e.target.value)}
                 placeholder="Add a private note…"
-                className="flex-1 rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-xs text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+                className="flex-1 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
               />
               <button
                 onClick={addNote}
                 disabled={busy}
-                className="rounded-md border border-panel-border px-3 py-2 text-xs text-zinc-300 hover:bg-white/[0.04] disabled:opacity-50"
+                className="rounded-md border border-zinc-700 px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-900 disabled:opacity-50"
               >
                 Add
               </button>

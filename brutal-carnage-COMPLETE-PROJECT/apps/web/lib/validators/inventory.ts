@@ -4,19 +4,11 @@ import { occurredAtSchema } from "@/lib/backdate";
 
 export const itemActionTypeSchema = z.enum(["DONATE", "TAKE", "ORDER"]);
 
-// Only meaningful when type = TAKE. PERSONAL counts against the member's
-// contribution total; FOR_SALE means the item is being pulled to list on
-// the marketplace on the family's behalf and must NOT count against them
-// (see lib/contributions.ts).
-export const itemActionPurposeSchema = z.enum(["PERSONAL", "FOR_SALE"]);
-
 // A single multi-select submission: some existing items by ID + quantity,
 // and optionally brand-new items that don't exist in the catalog yet
 // (these get routed to PendingItem approval instead of ItemAction).
 export const submitInventoryActionSchema = z.object({
   type: itemActionTypeSchema,
-  // Required (and only used) when type === "TAKE" — see itemActionPurposeSchema.
-  purpose: itemActionPurposeSchema.optional(),
   existingItems: z
     .array(
       z.object({
@@ -40,9 +32,6 @@ export const submitInventoryActionSchema = z.object({
 }).refine(
   (data) => data.existingItems.length > 0 || data.newItems.length > 0,
   { message: "Select at least one item or add a new one." }
-).refine(
-  (data) => data.type !== "TAKE" || !!data.purpose,
-  { message: "Choose whether this is for personal use or to sell for the family.", path: ["purpose"] }
 );
 
 export type SubmitInventoryActionInput = z.infer<typeof submitInventoryActionSchema>;

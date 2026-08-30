@@ -476,14 +476,11 @@ model PromotionRequest {
   userId        String
   fromRank      Rank
   toRank        Rank
-  reason        String?
   statsSnapshot Json
   status        ApprovalStatus @default(PENDING)
   reviewedById  String?
   reviewedAt    DateTime?
   rejectionNote String?
-
-  discordMessageId String? @unique
 
   createdAt DateTime @default(now())
 

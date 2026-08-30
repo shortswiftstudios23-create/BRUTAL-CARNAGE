@@ -40,10 +40,7 @@ Write only the summary text, no preamble, no headers.`;
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      // "claude-sonnet-4-6" was never a real model id, so every request
-      // here was failing with a 400 from Anthropic — this is why the
-      // panel always showed "Couldn't generate a summary right now."
-      model: "claude-sonnet-5",
+      model: "claude-sonnet-4-6",
       max_tokens: 200,
       messages: [{ role: "user", content: prompt }],
     }),

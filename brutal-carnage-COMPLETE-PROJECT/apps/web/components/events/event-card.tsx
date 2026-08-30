@@ -64,7 +64,7 @@ export function EventCard({ event, canManage }: { event: EventCardData; canManag
   }
 
   return (
-    <div className="rounded-lg border border-panel-border bg-panel/70 p-5">
+    <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-5">
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
           <div className="mb-1 flex items-center gap-2">
@@ -101,7 +101,7 @@ export function EventCard({ event, canManage }: { event: EventCardData; canManag
             className={cn(
               "flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition",
               event.isRegistered
-                ? "border border-panel-border text-zinc-300 hover:bg-white/[0.04]"
+                ? "border border-zinc-700 text-zinc-300 hover:bg-zinc-900"
                 : "bg-gradient-to-r from-red-800 to-red-700 text-zinc-100 shadow-[0_0_18px_-4px_rgba(220,38,38,0.5)] hover:shadow-[0_0_24px_-2px_rgba(220,38,38,0.7)]"
             )}
           >
@@ -125,7 +125,7 @@ export function EventCard({ event, canManage }: { event: EventCardData; canManag
         {canManage && !event.isGiveaway && isPast && event.status !== "COMPLETED" && (
           <a
             href={`/events/${event.id}/close-out`}
-            className="flex items-center gap-2 rounded-md border border-panel-border px-4 py-2 text-sm text-zinc-300 hover:bg-white/[0.04]"
+            className="flex items-center gap-2 rounded-md border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-900"
           >
             Close out event
           </a>
@@ -134,7 +134,7 @@ export function EventCard({ event, canManage }: { event: EventCardData; canManag
         {canManage && event.status !== "COMPLETED" && event.status !== "CANCELLED" && (
           <button
             onClick={() => setEditing(true)}
-            className="flex items-center gap-2 rounded-md border border-panel-border px-4 py-2 text-sm text-zinc-300 hover:bg-white/[0.04]"
+            className="flex items-center gap-2 rounded-md border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-900"
           >
             <Pencil className="h-3.5 w-3.5" /> Edit
           </button>
@@ -191,7 +191,7 @@ function StatusPill({ status, result }: { status: EventCardData["status"]; resul
   }
   if (status === "CANCELLED") {
     return (
-      <span className="rounded border border-panel-border bg-white/[0.03] px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+      <span className="rounded border border-zinc-700 bg-zinc-900 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
         Cancelled
       </span>
     );

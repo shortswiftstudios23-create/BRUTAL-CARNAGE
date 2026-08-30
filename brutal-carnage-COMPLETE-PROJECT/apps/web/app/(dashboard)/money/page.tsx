@@ -8,7 +8,6 @@ import { can } from "@/lib/permissions";
 import { Wallet, TrendingUp, Clock } from "lucide-react";
 import { MoneyClient } from "./money-client";
 import { MyLoanCard } from "@/components/money/my-loan-card";
-import { getPersonalExpenseAllowance } from "@/lib/personalExpense";
 
 export default async function MoneyPage() {
   const session = await auth();
@@ -18,7 +17,7 @@ export default async function MoneyPage() {
   const [balance, items, pendingTransactionCount, pendingBankCount, unreadCount, pendingTransactions, pendingBankRequests] =
     await Promise.all([
       prisma.familyBalance.findUnique({ where: { id: "singleton" } }),
-      prisma.item.findMany({ select: { id: true, name: true, currentStock: true, suggestedPrice: true }, orderBy: { name: "asc" } }),
+      prisma.item.findMany({ select: { id: true, name: true, currentStock: true }, orderBy: { name: "asc" } }),
       prisma.transaction.count({ where: { status: "PENDING" } }),
       prisma.bankRequest.count({ where: { status: "PENDING" } }),
       prisma.notification.count({ where: { userId: session!.user.id, read: false } }),
@@ -44,18 +43,14 @@ export default async function MoneyPage() {
     where: { userId: session!.user.id, status: "PENDING" },
   });
 
-  const [myLoan, personalExpenseAllowance] = await Promise.all([
-    prisma.loan.findFirst({
-      where: { userId: session!.user.id, status: { in: ["PENDING", "ACTIVE"] } },
-      include: { collateralItems: true },
-    }),
-    getPersonalExpenseAllowance(session!.user.id),
-  ]);
+  const myLoan = await prisma.loan.findFirst({
+    where: { userId: session!.user.id, status: { in: ["PENDING", "ACTIVE"] } },
+  });
 
   return (
     <>
       <Topbar pageTitle="Family bank" notificationCount={unreadCount} />
-      <main className="flex-1 overflow-y-auto p-6">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6">
         <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <StatCard
             label="Family balance"
@@ -67,7 +62,7 @@ export default async function MoneyPage() {
           <StatCard label="Pending bank requests" value={pendingBankCount.toString()} icon={Clock} accent={pendingBankCount > 0 ? "danger" : "neutral"} />
         </div>
 
-        <div className="mx-auto max-w-4xl">
+        <div className="mx-auto max-w-xl">
           {myLoan && (
             <MyLoanCard
               loan={{
@@ -76,16 +71,10 @@ export default async function MoneyPage() {
                 principal: Number(myLoan.principal),
                 amountOwed: Number(myLoan.amountOwed),
                 interestRate: Number(myLoan.interestRate),
-                dueAt: myLoan.dueAt?.toISOString() ?? null,
-                collateralItems: myLoan.collateralItems.map((c) => ({ id: c.id, itemName: c.itemName, quantity: c.quantity })),
               }}
             />
           )}
-          <MoneyFormsTabs
-            items={items.map((i) => ({ ...i, suggestedPrice: Number(i.suggestedPrice) }))}
-            hasActiveLoan={!!myLoan}
-            personalExpenseAllowance={personalExpenseAllowance}
-          />
+          <MoneyFormsTabs items={items} hasActiveLoan={!!myLoan} />
         </div>
 
         <MoneyClient

@@ -22,7 +22,7 @@ export function BadgePill({ name }: { name: string }) {
     <span
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
-        BADGE_COLORS[name] ?? "border-panel-border bg-white/[0.03] text-zinc-300"
+        BADGE_COLORS[name] ?? "border-zinc-700 bg-zinc-900 text-zinc-300"
       )}
     >
       <Icon className="h-3 w-3" />

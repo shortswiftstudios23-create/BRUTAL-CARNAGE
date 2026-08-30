@@ -5,7 +5,6 @@ import { prisma } from "@/lib/prisma";
 import { can, RANK_ORDER, rankLevel } from "@/lib/permissions";
 import { createPromotionRequestSchema } from "@/lib/validators/discipline";
 import { getMemberStats } from "@/lib/performance";
-import { postPromotionRequestToDiscord } from "@/lib/discord";
 
 export async function GET() {
   const session = await auth();
@@ -35,9 +34,9 @@ export async function POST(req: NextRequest) {
 
   const currentLevel = rankLevel(session.user.rank);
   const targetLevel = rankLevel(parsed.data.toRank);
-  if (targetLevel !== currentLevel + 1) {
+  if (targetLevel <= currentLevel) {
     return NextResponse.json(
-      { error: `You can only request the next rank up: ${RANK_ORDER[currentLevel + 1]?.replace(/_/g, " ") ?? "n/a"}` },
+      { error: "You can only request a rank above your current one." },
       { status: 400 }
     );
   }
@@ -59,33 +58,9 @@ export async function POST(req: NextRequest) {
       userId: session.user.id,
       fromRank: session.user.rank,
       toRank: parsed.data.toRank,
-      reason: parsed.data.reason,
       statsSnapshot,
     },
   });
-
-  // Mirror it to Discord in the family's fixed template. Best-effort —
-  // if Discord is unreachable the request still exists on the website
-  // and can be approved from there; we just log it.
-  try {
-    const requester = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { gameId: true },
-    });
-    const discordMessageId = await postPromotionRequestToDiscord({
-      discordId: session.user.discordId,
-      gameId: requester?.gameId ?? null,
-      fromRank: session.user.rank,
-      toRank: parsed.data.toRank,
-      reason: parsed.data.reason,
-    });
-    await prisma.promotionRequest.update({
-      where: { id: request.id },
-      data: { discordMessageId },
-    });
-  } catch (err) {
-    console.error("[promotions] failed to mirror request to Discord:", err);
-  }
 
   // Notify everyone who can review it.
   const reviewers = await prisma.user.findMany({
