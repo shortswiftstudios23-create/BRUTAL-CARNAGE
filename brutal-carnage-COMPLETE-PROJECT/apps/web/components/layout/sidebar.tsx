@@ -1,9 +1,11 @@
 // components/layout/sidebar.tsx
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { Rank } from "@prisma/client";
 import { can } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
@@ -22,6 +24,8 @@ import {
   Users,
   ClipboardCheck,
   Store,
+  Settings,
+  LogOut,
 } from "lucide-react";
 
 interface NavItem {
@@ -72,6 +76,21 @@ export function Sidebar({
   avatarUrl?: string | null;
 }) {
   const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close the account menu on outside click / route change, same as any
+  // normal dropdown — otherwise it'd stay open forever once toggled.
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+  useEffect(() => setMenuOpen(false), [pathname]);
 
   const items = NAV_ITEMS.filter((item) => !item.visible || item.visible(userRank));
 
@@ -123,9 +142,29 @@ export function Sidebar({
         })}
       </nav>
 
-      <div className="relative border-t border-panel-border p-3">
-        <Link
-          href="/settings"
+      <div className="relative border-t border-panel-border p-3" ref={menuRef}>
+        {menuOpen && (
+          <div className="absolute bottom-full left-3 right-3 z-20 mb-2 overflow-hidden rounded-lg border border-panel-border bg-panel shadow-panel">
+            <Link
+              href="/settings"
+              className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-zinc-300 transition-colors hover:bg-white/[0.05] hover:text-zinc-100"
+              onClick={() => setMenuOpen(false)}
+            >
+              <Settings className="h-4 w-4 text-zinc-500" />
+              Account settings
+            </Link>
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="flex w-full items-center gap-2.5 border-t border-panel-border px-3 py-2.5 text-left text-sm text-red-400 transition-colors hover:bg-red-950/30 hover:text-red-300"
+            >
+              <LogOut className="h-4 w-4" />
+              Log out
+            </button>
+          </div>
+        )}
+
+        <button
+          onClick={() => setMenuOpen((v) => !v)}
           className="group flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-white/[0.04]"
         >
           <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-panel-border bg-white/[0.04] text-xs font-semibold text-zinc-300">
@@ -141,8 +180,13 @@ export function Sidebar({
               {userRank.replace(/_/g, " ")}
             </p>
           </div>
-          <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-zinc-600 transition-colors group-hover:text-zinc-400" />
-        </Link>
+          <ChevronsUpDown
+            className={cn(
+              "h-3.5 w-3.5 shrink-0 text-zinc-600 transition-transform group-hover:text-zinc-400",
+              menuOpen && "rotate-180"
+            )}
+          />
+        </button>
       </div>
     </aside>
   );
