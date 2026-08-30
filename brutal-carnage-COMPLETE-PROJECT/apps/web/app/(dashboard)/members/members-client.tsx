@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Link from "next/link";
-import { Search, Ban, ShieldCheck, StickyNote, Loader2, X, UserPlus, Copy, Check, BarChart3 } from "lucide-react";
+import { Search, Ban, ShieldCheck, StickyNote, Loader2, X, UserPlus, Copy, Check, BarChart3, KeyRound } from "lucide-react";
 import { RankBadge } from "@/components/layout/rank-badge";
 import { Rank } from "@prisma/client";
 
@@ -39,12 +39,14 @@ export function MembersClient({
   canViewPrivateNotes,
   canCreateMemberManually,
   canViewMemberPerformanceDetail,
+  canResetMemberPassword,
 }: {
   members: Member[];
   canManageBlacklist: boolean;
   canViewPrivateNotes: boolean;
   canCreateMemberManually: boolean;
   canViewMemberPerformanceDetail: boolean;
+  canResetMemberPassword: boolean;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -140,7 +142,7 @@ export function MembersClient({
                         <BarChart3 className="h-3 w-3" /> Performance
                       </Link>
                     )}
-                    {(canManageBlacklist || canViewPrivateNotes) && (
+                    {(canManageBlacklist || canViewPrivateNotes || canResetMemberPassword) && (
                       <button
                         onClick={() => setActiveMember(m)}
                         className="rounded-md border border-panel-border px-3 py-1 text-xs text-zinc-300 hover:bg-white/[0.04]"
@@ -166,6 +168,7 @@ export function MembersClient({
           member={activeMember}
           canManageBlacklist={canManageBlacklist}
           canViewPrivateNotes={canViewPrivateNotes}
+          canResetMemberPassword={canResetMemberPassword}
           onClose={() => setActiveMember(null)}
           onChanged={() => router.refresh()}
         />
@@ -320,12 +323,14 @@ function MemberModal({
   member,
   canManageBlacklist,
   canViewPrivateNotes,
+  canResetMemberPassword,
   onClose,
   onChanged,
 }: {
   member: Member;
   canManageBlacklist: boolean;
   canViewPrivateNotes: boolean;
+  canResetMemberPassword: boolean;
   onClose: () => void;
   onChanged: () => void;
 }) {
@@ -334,6 +339,9 @@ function MemberModal({
   const [notes, setNotes] = useState<Note[] | null>(null);
   const [notesLoading, setNotesLoading] = useState(false);
   const [newNote, setNewNote] = useState("");
+  const [resetResult, setResetResult] = useState<{ username: string; tempPassword: string } | null>(null);
+  const [resetCopied, setResetCopied] = useState(false);
+  const [confirmingReset, setConfirmingReset] = useState(false);
 
   async function loadNotes() {
     if (!canViewPrivateNotes || notes !== null) return;
@@ -373,6 +381,28 @@ function MemberModal({
     } finally {
       setBusy(false);
     }
+  }
+
+  async function resetPassword() {
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/members/${member.id}/reset-password`, { method: "POST" });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setResetResult({ username: data.username, tempPassword: data.tempPassword });
+      setConfirmingReset(false);
+    } catch {
+      toast.error("Couldn't reset password");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function copyResetResult() {
+    if (!resetResult) return;
+    await navigator.clipboard.writeText(`Username: ${resetResult.username}\nPassword: ${resetResult.tempPassword}`);
+    setResetCopied(true);
+    setTimeout(() => setResetCopied(false), 2000);
   }
 
   async function addNote() {
@@ -440,6 +470,57 @@ function MemberModal({
                   Blacklist member
                 </button>
               </>
+            )}
+          </div>
+        )}
+
+        {canResetMemberPassword && (
+          <div className="mb-5 space-y-2 border-b border-panel-border pb-5">
+            {resetResult ? (
+              <div className="rounded-md border border-green-800 bg-green-950/30 p-3 text-xs">
+                <p className="mb-2 text-green-300">
+                  This password is shown once and never stored — copy it now and hand it to {resetResult.username} directly.
+                </p>
+                <p className="text-zinc-500">Temporary password</p>
+                <p className="font-mono text-zinc-100">{resetResult.tempPassword}</p>
+                <button
+                  onClick={copyResetResult}
+                  className="mt-2 flex items-center gap-1 rounded-md border border-panel-border px-2 py-1 text-zinc-300 hover:bg-white/[0.04]"
+                >
+                  {resetCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                  {resetCopied ? "Copied" : "Copy username + password"}
+                </button>
+              </div>
+            ) : confirmingReset ? (
+              <>
+                <p className="text-xs text-zinc-500">
+                  This immediately invalidates {member.username}&apos;s current password. They&apos;ll need the new one to log back in.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={resetPassword}
+                    disabled={busy}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-md border border-amber-800 bg-amber-950/40 py-2 text-sm text-amber-300 hover:bg-amber-950/60 disabled:opacity-50"
+                  >
+                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
+                    Confirm reset
+                  </button>
+                  <button
+                    onClick={() => setConfirmingReset(false)}
+                    className="rounded-md border border-panel-border px-3 py-2 text-sm text-zinc-300 hover:bg-white/[0.04]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
+            ) : (
+              <button
+                onClick={() => setConfirmingReset(true)}
+                className="flex w-full items-center justify-center gap-2 rounded-md border border-panel-border px-3 py-2 text-sm text-zinc-300 hover:bg-white/[0.04]"
+              >
+                <KeyRound className="h-4 w-4" />
+                Reset password
+              </button>
             )}
           </div>
         )}

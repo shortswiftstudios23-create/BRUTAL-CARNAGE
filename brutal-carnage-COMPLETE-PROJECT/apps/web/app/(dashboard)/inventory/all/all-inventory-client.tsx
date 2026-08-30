@@ -14,7 +14,7 @@ interface ItemRow {
 
 type SortKey = "name" | "currentStock" | "suggestedPrice" | "worth";
 
-export function AllInventoryClient({ items }: { items: ItemRow[] }) {
+export function AllInventoryClient({ items, canViewWorth }: { items: ItemRow[]; canViewWorth: boolean }) {
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -68,7 +68,8 @@ export function AllInventoryClient({ items }: { items: ItemRow[] }) {
           />
         </div>
         <p className="text-xs text-zinc-500">
-          {items.length} item{items.length !== 1 ? "s" : ""} · ${totalWorth.toLocaleString()} total worth
+          {items.length} item{items.length !== 1 ? "s" : ""}
+          {canViewWorth && <> · ${totalWorth.toLocaleString()} total worth</>}
         </p>
       </div>
 
@@ -80,7 +81,9 @@ export function AllInventoryClient({ items }: { items: ItemRow[] }) {
               <th className="px-4 py-2 text-left">Category</th>
               <SortableHeader label="In stock" active={sortKey === "currentStock"} dir={sortDir} onClick={() => toggleSort("currentStock")} align="right" />
               <SortableHeader label="Unit price" active={sortKey === "suggestedPrice"} dir={sortDir} onClick={() => toggleSort("suggestedPrice")} align="right" />
-              <SortableHeader label="Total worth" active={sortKey === "worth"} dir={sortDir} onClick={() => toggleSort("worth")} align="right" />
+              {canViewWorth && (
+                <SortableHeader label="Total worth" active={sortKey === "worth"} dir={sortDir} onClick={() => toggleSort("worth")} align="right" />
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-800">
@@ -92,14 +95,16 @@ export function AllInventoryClient({ items }: { items: ItemRow[] }) {
                   {item.currentStock}
                 </td>
                 <td className="px-4 py-2 text-right text-zinc-300">${item.suggestedPrice.toLocaleString()}</td>
-                <td className="px-4 py-2 text-right text-zinc-200">
-                  ${(item.suggestedPrice * item.currentStock).toLocaleString()}
-                </td>
+                {canViewWorth && (
+                  <td className="px-4 py-2 text-right text-zinc-200">
+                    ${(item.suggestedPrice * item.currentStock).toLocaleString()}
+                  </td>
+                )}
               </tr>
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-zinc-600">
+                <td colSpan={canViewWorth ? 5 : 4} className="px-4 py-6 text-center text-zinc-600">
                   No items match "{query}".
                 </td>
               </tr>

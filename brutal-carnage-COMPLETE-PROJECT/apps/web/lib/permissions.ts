@@ -53,6 +53,12 @@ export const PERMISSIONS = {
   canCreateEvent: (r: Rank) => isAtLeast(r, "EVENT_MANAGER"),
   canMarkEventResult: (r: Rank) => isAtLeast(r, "EVENT_MANAGER"),
 
+  // Event Manager+ can see the family's total warehouse inventory value
+  // on the Inventory page. Below that rank, members can still donate,
+  // take, order, and add new items — they just don't see the dollar
+  // total across the whole catalog.
+  canViewInventoryWorth: (r: Rank) => isAtLeast(r, "EVENT_MANAGER"),
+
   // Under Deputy+ (promotion pipeline)
   canReviewPromotions: (r: Rank) => isAtLeast(r, "UNDER_DEPUTY"),
   canSubmitPromotionRequest: (r: Rank) => isAtLeast(r, "CADET"), // must be past Rookie to be promotable via request
@@ -72,6 +78,12 @@ export const PERMISSIONS = {
   // from canManageBlacklist etc. even though the threshold matches
   // today, so this can be tuned independently later.
   canCreateMemberManually: (r: Rank) => isAtLeast(r, "DEPUTY"),
+
+  // Deputy+ can reset an existing member's login password (e.g. they
+  // lost it, or it needs rotating). Same threshold as manual creation
+  // since it's the same trust level — kept as its own key so it can be
+  // tuned independently later.
+  canResetMemberPassword: (r: Rank) => isAtLeast(r, "DEPUTY"),
 
   // Deputy+ view of every item ever added historically (not just
   // current stock) with the ability to correct name/price.

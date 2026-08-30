@@ -46,6 +46,7 @@ export default async function MembersPage() {
           canViewPrivateNotes={can(session!.user.rank, "canViewPrivateNotes")}
           canCreateMemberManually={can(session!.user.rank, "canCreateMemberManually")}
           canViewMemberPerformanceDetail={can(session!.user.rank, "canViewMemberPerformanceDetail")}
+          canResetMemberPassword={can(session!.user.rank, "canResetMemberPassword")}
         />
       </main>
     </>

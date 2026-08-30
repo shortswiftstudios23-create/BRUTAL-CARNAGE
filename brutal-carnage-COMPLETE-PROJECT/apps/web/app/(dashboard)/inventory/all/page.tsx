@@ -7,6 +7,7 @@
 import { Topbar } from "@/components/layout/topbar";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { can } from "@/lib/permissions";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { AllInventoryClient } from "./all-inventory-client";
@@ -33,7 +34,7 @@ export default async function AllInventoryPage() {
         <Link href="/inventory" className="mb-4 flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-200">
           <ArrowLeft className="h-4 w-4" /> Back to inventory
         </Link>
-        <AllInventoryClient items={formattedItems} />
+        <AllInventoryClient items={formattedItems} canViewWorth={can(session!.user.rank, "canViewInventoryWorth")} />
       </main>
     </>
   );

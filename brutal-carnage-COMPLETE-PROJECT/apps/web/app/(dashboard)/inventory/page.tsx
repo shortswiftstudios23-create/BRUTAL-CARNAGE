@@ -21,6 +21,7 @@ export default async function InventoryPage() {
 
   const totalWorth = items.reduce((sum, i) => sum + Number(i.suggestedPrice) * i.currentStock, 0);
   const lowStockCount = items.filter((i) => i.currentStock <= 5).length;
+  const canSeeWorth = can(session!.user.rank, "canViewInventoryWorth");
 
   const formattedItems = items.map((i) => ({
     id: i.id,
@@ -35,8 +36,10 @@ export default async function InventoryPage() {
       <Topbar pageTitle="Inventory" notificationCount={unreadCount} />
 
       <main className="flex-1 overflow-y-auto p-6">
-        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <StatCard label="Total inventory worth" value={`$${totalWorth.toLocaleString()}`} icon={DollarSign} accent="success" />
+        <div className={`mb-6 grid grid-cols-1 gap-4 ${canSeeWorth ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+          {canSeeWorth && (
+            <StatCard label="Total inventory worth" value={`$${totalWorth.toLocaleString()}`} icon={DollarSign} accent="success" />
+          )}
           <StatCard label="Catalog items" value={items.length.toString()} icon={Package} />
           <StatCard label="Low stock (≤5)" value={lowStockCount.toString()} icon={AlertTriangle} accent={lowStockCount > 0 ? "danger" : "neutral"} />
         </div>
