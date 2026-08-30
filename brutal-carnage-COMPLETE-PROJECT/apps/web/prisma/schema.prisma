@@ -344,11 +344,17 @@ model LoanRepayment {
   @@index([loanId])
 }
 
+enum BankRequestCategory {
+  GENERAL
+  PERSONAL_EXPENSE
+}
+
 model BankRequest {
-  id           String         @id @default(cuid())
-  amount       Decimal        @db.Decimal(12, 2)
+  id           String              @id @default(cuid())
+  amount       Decimal             @db.Decimal(12, 2)
   reason       String
-  status       ApprovalStatus @default(PENDING)
+  category     BankRequestCategory @default(GENERAL)
+  status       ApprovalStatus      @default(PENDING)
 
   user         User   @relation("BankRequestsByUser", fields: [userId], references: [id])
   userId       String

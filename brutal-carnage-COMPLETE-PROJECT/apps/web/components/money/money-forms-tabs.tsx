@@ -13,7 +13,22 @@ interface ItemOption {
   currentStock: number;
 }
 
-export function MoneyFormsTabs({ items, hasActiveLoan = false }: { items: ItemOption[]; hasActiveLoan?: boolean }) {
+interface PersonalExpenseAllowance {
+  totalDonated: number;
+  cap: number;
+  alreadyUsed: number;
+  remaining: number;
+}
+
+export function MoneyFormsTabs({
+  items,
+  hasActiveLoan = false,
+  personalExpenseAllowance,
+}: {
+  items: ItemOption[];
+  hasActiveLoan?: boolean;
+  personalExpenseAllowance: PersonalExpenseAllowance;
+}) {
   const [tab, setTab] = useState<"give" | "take">("give");
 
   return (
@@ -38,26 +53,33 @@ export function MoneyFormsTabs({ items, hasActiveLoan = false }: { items: ItemOp
       </div>
 
       {tab === "give" ? (
-        <TransactionForm items={items} mode="give" />
+        <div className="mx-auto max-w-xl">
+          <TransactionForm items={items} mode="give" />
+        </div>
       ) : (
-        <div className="space-y-6">
-          <BankRequestForm />
-          {!hasActiveLoan && (
-            <>
-              <div className="flex items-center gap-3">
-                <div className="h-px flex-1 bg-white/[0.04]" />
-                <span className="text-[11px] uppercase tracking-widest text-zinc-600">need it back? try a loan</span>
-                <div className="h-px flex-1 bg-white/[0.04]" />
-              </div>
-              <LoanRequestForm />
-            </>
+        // Two requests side by side instead of three forms stacked one
+        // under another — they're two distinct, equally-weighted paths
+        // (ask for money vs. borrow it), so they read better as a pair
+        // than as a vertical list with dividers between them.
+        <div className="grid gap-6 lg:grid-cols-2">
+          <BankRequestForm personalExpenseAllowance={personalExpenseAllowance} />
+
+          {hasActiveLoan ? (
+            <div className="flex flex-col justify-center rounded-lg border border-dashed border-panel-border bg-panel/40 p-5 text-center text-sm text-zinc-500">
+              You already have a loan open — pay it off before requesting another.
+            </div>
+          ) : (
+            <LoanRequestForm />
           )}
-          <div className="flex items-center gap-3">
-            <div className="h-px flex-1 bg-white/[0.04]" />
-            <span className="text-[11px] uppercase tracking-widest text-zinc-600">or just log it</span>
-            <div className="h-px flex-1 bg-white/[0.04]" />
+
+          <div className="lg:col-span-2">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="h-px flex-1 bg-white/[0.04]" />
+              <span className="text-[11px] uppercase tracking-widest text-zinc-600">or just log an expense</span>
+              <div className="h-px flex-1 bg-white/[0.04]" />
+            </div>
+            <TransactionForm items={items} mode="take" />
           </div>
-          <TransactionForm items={items} mode="take" />
         </div>
       )}
     </div>

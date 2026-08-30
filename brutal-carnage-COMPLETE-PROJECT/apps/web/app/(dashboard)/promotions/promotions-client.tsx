@@ -13,6 +13,7 @@ interface Request {
   toRank: string;
   status: "PENDING" | "APPROVED" | "REJECTED";
   statsSnapshot: Record<string, unknown>;
+  rejectionNote: string | null;
   createdAt: string;
   isOwn: boolean;
 }
@@ -33,6 +34,8 @@ export function PromotionsClient({
   const [reviewingId, setReviewingId] = useState<string | null>(null);
 
   const hasPending = requests.some((r) => r.isOwn && r.status === "PENDING");
+  const myRequests = requests.filter((r) => r.isOwn);
+  const lastRejected = myRequests.find((r) => r.status === "REJECTED");
 
   async function submitRequest() {
     if (!nextRank) return;
@@ -57,9 +60,22 @@ export function PromotionsClient({
   }
 
   async function review(id: string, action: "approve" | "reject") {
+    let rejectionNote: string | undefined;
+    if (action === "reject") {
+      const input = window.prompt(
+        "Reason for declining this request? The member will see this, so they know what to work on before appealing."
+      );
+      if (input === null) return; // cancelled
+      rejectionNote = input.trim() || undefined;
+    }
+
     setReviewingId(id);
     try {
-      const res = await fetch(`/api/promotions/${id}/${action}`, { method: "POST" });
+      const res = await fetch(`/api/promotions/${id}/${action}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rejectionNote }),
+      });
       if (!res.ok) throw new Error();
       toast.success(action === "approve" ? "Promotion approved" : "Request rejected");
       router.refresh();
@@ -81,6 +97,19 @@ export function PromotionsClient({
                 Submit a request to move up to <span className="text-zinc-300">{nextRank.replace(/_/g, " ")}</span>.
                 Your current stats will be attached automatically.
               </p>
+              {lastRejected && !hasPending && (
+                <div className="mb-3 rounded-md border border-red-900/50 bg-red-950/20 p-3 text-xs text-zinc-400">
+                  Your last request was declined
+                  {lastRejected.rejectionNote ? (
+                    <>
+                      : <span className="text-zinc-300">"{lastRejected.rejectionNote}"</span>
+                    </>
+                  ) : (
+                    " — no reason was given."
+                  )}{" "}
+                  Address that, then submit again below.
+                </div>
+              )}
               <button
                 onClick={submitRequest}
                 disabled={submitting || hasPending}
@@ -88,7 +117,7 @@ export function PromotionsClient({
               >
                 {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
                 <ArrowUpCircle className="h-4 w-4" />
-                {hasPending ? "Request pending" : "Request promotion"}
+                {hasPending ? "Request pending" : lastRejected ? "Resubmit request" : "Request promotion"}
               </button>
             </>
           ) : (
@@ -123,6 +152,12 @@ export function PromotionsClient({
                   {"eventsAttended" in r.statsSnapshot && <span>Events attended: {String(r.statsSnapshot.eventsAttended)}</span>}
                   {"strikeCount" in r.statsSnapshot && <span>Strikes: {String(r.statsSnapshot.strikeCount)}</span>}
                 </div>
+                {r.status === "REJECTED" && r.rejectionNote && (
+                  <p className="mb-3 rounded-md border border-red-900/40 bg-red-950/10 p-2.5 text-xs text-zinc-400">
+                    <span className="text-zinc-500">Reason: </span>
+                    {r.rejectionNote}
+                  </p>
+                )}
                 {canReview && r.status === "PENDING" && (
                   <div className="flex gap-2">
                     <button

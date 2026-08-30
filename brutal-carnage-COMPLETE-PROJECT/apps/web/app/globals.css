@@ -24,6 +24,13 @@
   --steel: 220 9% 60%;
   --panel: 255 12% 8%;
   --panel-border: 255 8% 16%;
+
+  /* Tells the browser to use its dark UI for native form controls. Without
+     this, every <select> dropdown's option list renders with the OS's
+     default LIGHT popup (dark text on white) no matter how the <select>
+     element itself is styled — the popup chrome ignores our CSS. This is
+     the one-line fix for "every dropdown on the site is unreadable." */
+  color-scheme: dark;
 }
 
 body {

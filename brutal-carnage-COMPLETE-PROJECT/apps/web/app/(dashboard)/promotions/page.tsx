@@ -33,6 +33,7 @@ export default async function PromotionsPage() {
             toRank: r.toRank,
             status: r.status,
             statsSnapshot: r.statsSnapshot as Record<string, unknown>,
+            rejectionNote: r.rejectionNote,
             createdAt: r.createdAt.toISOString(),
             isOwn: r.userId === session!.user.id,
           }))}

@@ -34,6 +34,7 @@ export const createTransactionSchema = z
 export const createBankRequestSchema = z.object({
   amount: z.number().positive(),
   reason: z.string().min(5).max(500),
+  category: z.enum(["GENERAL", "PERSONAL_EXPENSE"]).default("GENERAL"),
 });
 
 export const reviewBankRequestSchema = z.object({

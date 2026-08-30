@@ -79,32 +79,12 @@ export function TransactionForm({
 
   const watchedType = watch("type");
   const watchedAmount = watch("amount");
-  const [keepTenPercent, setKeepTenPercent] = useState(false);
-
-  // When donating proceeds from a sale, the member can choose to keep 10%
-  // for themselves before the rest goes to the family. The amount typed
-  // into the field is the TOTAL they're holding (e.g. what they got from
-  // selling items) — donating 90% of that, with the usual 3% family tax
-  // applied on top of the donated 90%, not the original total.
-  const keptAmount = useMemo(() => {
-    if (watchedType !== "DONATION" || !keepTenPercent) return 0;
-    const amount = Number(watchedAmount);
-    if (!amount || amount <= 0) return 0;
-    return Math.round(amount * 0.1 * 100) / 100;
-  }, [watchedType, keepTenPercent, watchedAmount]);
-
-  const amountToDonate = useMemo(() => {
-    const amount = Number(watchedAmount);
-    if (!amount || amount <= 0) return 0;
-    return watchedType === "DONATION" && keepTenPercent
-      ? Math.round((amount - keptAmount) * 100) / 100
-      : amount;
-  }, [watchedType, keepTenPercent, watchedAmount, keptAmount]);
 
   const breakdown = useMemo(() => {
-    if (!amountToDonate || amountToDonate <= 0) return null;
-    return calculateTax(amountToDonate, watchedType);
-  }, [watchedType, amountToDonate]);
+    const amount = Number(watchedAmount);
+    if (!amount || amount <= 0) return null;
+    return calculateTax(amount, watchedType);
+  }, [watchedType, watchedAmount]);
 
   async function onSubmit(values: FormValues) {
     setSubmitting(true);
@@ -117,19 +97,7 @@ export function TransactionForm({
           ? new Date(Date.now() - values.daysAgo * 24 * 60 * 60 * 1000).toISOString()
           : undefined;
 
-      // If they're keeping 10%, only the donated portion gets submitted —
-      // the kept amount never touches the family ledger at all.
-      const payload =
-        values.type === "DONATION" && keepTenPercent
-          ? {
-              ...values,
-              amount: amountToDonate,
-              occurredAt,
-              note: values.note
-                ? `${values.note} (kept $${keptAmount.toLocaleString()} for self before donating)`
-                : `Kept $${keptAmount.toLocaleString()} for self before donating`,
-            }
-          : { ...values, occurredAt };
+      const payload = { ...values, occurredAt };
 
       const res = await fetch("/api/transactions", {
         method: "POST",
@@ -219,9 +187,7 @@ export function TransactionForm({
       )}
 
       <div>
-        <label className="mb-1.5 block text-xs uppercase tracking-wider text-zinc-500">
-          {watchedType === "DONATION" && keepTenPercent ? "Total amount you're holding" : "Amount"}
-        </label>
+        <label className="mb-1.5 block text-xs uppercase tracking-wider text-zinc-500">Amount</label>
         <div className="relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">$</span>
           <input
@@ -234,31 +200,6 @@ export function TransactionForm({
         </div>
         {errors.amount && <p className="mt-1 text-xs text-red-500">{errors.amount.message}</p>}
       </div>
-
-      {watchedType === "DONATION" && (
-        <label className="flex items-center gap-2 rounded-md border border-panel-border bg-white/[0.03] p-3 text-sm text-zinc-300">
-          <input
-            type="checkbox"
-            checked={keepTenPercent}
-            onChange={(e) => setKeepTenPercent(e.target.checked)}
-            className="h-4 w-4 rounded border-panel-border bg-white/[0.03] text-red-600 focus:ring-red-800"
-          />
-          Keep 10% for myself before donating the rest
-        </label>
-      )}
-
-      {watchedType === "DONATION" && keepTenPercent && amountToDonate > 0 && (
-        <div className="rounded-md border border-panel-border bg-white/[0.03] p-3 text-sm text-zinc-400">
-          <div className="flex items-center justify-between">
-            <span>You keep (10%)</span>
-            <span className="text-zinc-200">${keptAmount.toLocaleString()}</span>
-          </div>
-          <div className="mt-1 flex items-center justify-between">
-            <span>Amount you're donating (90%)</span>
-            <span className="text-zinc-200">${amountToDonate.toLocaleString()}</span>
-          </div>
-        </div>
-      )}
 
       <div>
         <label className="mb-1.5 block text-xs uppercase tracking-wider text-zinc-500">

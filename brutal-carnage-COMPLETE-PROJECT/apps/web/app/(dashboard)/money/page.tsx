@@ -8,6 +8,7 @@ import { can } from "@/lib/permissions";
 import { Wallet, TrendingUp, Clock } from "lucide-react";
 import { MoneyClient } from "./money-client";
 import { MyLoanCard } from "@/components/money/my-loan-card";
+import { getPersonalExpenseAllowance } from "@/lib/personalExpense";
 
 export default async function MoneyPage() {
   const session = await auth();
@@ -43,9 +44,12 @@ export default async function MoneyPage() {
     where: { userId: session!.user.id, status: "PENDING" },
   });
 
-  const myLoan = await prisma.loan.findFirst({
-    where: { userId: session!.user.id, status: { in: ["PENDING", "ACTIVE"] } },
-  });
+  const [myLoan, personalExpenseAllowance] = await Promise.all([
+    prisma.loan.findFirst({
+      where: { userId: session!.user.id, status: { in: ["PENDING", "ACTIVE"] } },
+    }),
+    getPersonalExpenseAllowance(session!.user.id),
+  ]);
 
   return (
     <>
@@ -62,7 +66,7 @@ export default async function MoneyPage() {
           <StatCard label="Pending bank requests" value={pendingBankCount.toString()} icon={Clock} accent={pendingBankCount > 0 ? "danger" : "neutral"} />
         </div>
 
-        <div className="mx-auto max-w-xl">
+        <div className="mx-auto max-w-4xl">
           {myLoan && (
             <MyLoanCard
               loan={{
@@ -74,7 +78,11 @@ export default async function MoneyPage() {
               }}
             />
           )}
-          <MoneyFormsTabs items={items} hasActiveLoan={!!myLoan} />
+          <MoneyFormsTabs
+            items={items}
+            hasActiveLoan={!!myLoan}
+            personalExpenseAllowance={personalExpenseAllowance}
+          />
         </div>
 
         <MoneyClient
