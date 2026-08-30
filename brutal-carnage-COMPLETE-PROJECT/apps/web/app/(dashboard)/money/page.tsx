@@ -18,7 +18,7 @@ export default async function MoneyPage() {
   const [balance, items, pendingTransactionCount, pendingBankCount, unreadCount, pendingTransactions, pendingBankRequests] =
     await Promise.all([
       prisma.familyBalance.findUnique({ where: { id: "singleton" } }),
-      prisma.item.findMany({ select: { id: true, name: true, currentStock: true }, orderBy: { name: "asc" } }),
+      prisma.item.findMany({ select: { id: true, name: true, currentStock: true, suggestedPrice: true }, orderBy: { name: "asc" } }),
       prisma.transaction.count({ where: { status: "PENDING" } }),
       prisma.bankRequest.count({ where: { status: "PENDING" } }),
       prisma.notification.count({ where: { userId: session!.user.id, read: false } }),
@@ -82,7 +82,7 @@ export default async function MoneyPage() {
             />
           )}
           <MoneyFormsTabs
-            items={items}
+            items={items.map((i) => ({ ...i, suggestedPrice: Number(i.suggestedPrice) }))}
             hasActiveLoan={!!myLoan}
             personalExpenseAllowance={personalExpenseAllowance}
           />

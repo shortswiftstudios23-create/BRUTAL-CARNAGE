@@ -221,7 +221,121 @@ export async function notifyPrivateNoteAdded(
   }).catch((err) => console.error("[notifyPrivateNoteAdded] DM failed", err));
 }
 
-// Posts a new announcement to all 3 of the family's fixed Discord
+// ============================================================================
+// PROMOTIONS <-> DISCORD SYNC
+// ============================================================================
+// Promotion requests are mirrored, verbatim, between the website and the
+// #promotion-requests channel using the family's fixed text template
+// (not an embed — leadership wants to be able to read/search it as
+// plain text same as if a member had typed it by hand). Whichever side
+// a request is created on, the other side gets the same message/row, so
+// admins can review from either place and everyone sees the same log.
+
+const PROMOTION_REQUEST_CHANNEL_ID = "1542487057782276167";
+const PROMOTION_APPROVED_CHANNEL_ID = "1542487057316712504";
+
+// "UNDER_DEPUTY" -> "Under Deputy". Used in every templated message so
+// ranks read the same everywhere instead of raw enum casing.
+export function formatRankLabel(rank: Rank): string {
+  return rank
+    .split("_")
+    .map((word) => word[0] + word.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function promotionRequestMessage(params: {
+  discordId: string;
+  gameId: string | null;
+  fromRank: Rank;
+  toRank: Rank;
+  reason: string;
+}) {
+  return [
+    `**New promotion request**`,
+    `Name: <@${params.discordId}>`,
+    `ID: ${params.gameId ?? "N/A"}`,
+    `Prev Rank: ${formatRankLabel(params.fromRank)}`,
+    `Requested Rank: ${formatRankLabel(params.toRank)}`,
+    `Reason: ${params.reason}`,
+  ].join("\n");
+}
+
+// Posts a promotion request to Discord in the fixed template and returns
+// the new message's id so it can be stored as
+// PromotionRequest.discordMessageId (lets us react ✅ on the right
+// message later, and lets a Discord-side edit/approval find its way
+// back to the right row).
+export async function postPromotionRequestToDiscord(params: {
+  discordId: string;
+  gameId: string | null;
+  fromRank: Rank;
+  toRank: Rank;
+  reason: string;
+}) {
+  const res = await fetch(`${DISCORD_API}/channels/${PROMOTION_REQUEST_CHANNEL_ID}/messages`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bot ${BOT_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      content: promotionRequestMessage(params),
+      allowed_mentions: { parse: [] },
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to post promotion request to Discord: ${res.status}`);
+  }
+
+  const message = await res.json();
+  return message.id as string;
+}
+
+// Adds the ✅ that marks a request message as approved, and posts the
+// approval record to the separate approvals channel, tagging both the
+// promoted member and whoever approved it.
+export async function syncPromotionApprovalToDiscord(params: {
+  discordMessageId: string | null;
+  discordId: string;
+  gameId: string | null;
+  fromRank: Rank;
+  toRank: Rank;
+  reason: string | null;
+  approverDiscordId: string;
+}) {
+  if (params.discordMessageId) {
+    await fetch(
+      `${DISCORD_API}/channels/${PROMOTION_REQUEST_CHANNEL_ID}/messages/${params.discordMessageId}/reactions/%E2%9C%85/@me`,
+      { method: "PUT", headers: { Authorization: `Bot ${BOT_TOKEN}` } }
+    ).catch((err) => console.error("[syncPromotionApprovalToDiscord] failed to react", err));
+  }
+
+  const content = [
+    `Name: <@${params.discordId}>`,
+    `ID: ${params.gameId ?? "N/A"}`,
+    `Prev Rank: ${formatRankLabel(params.fromRank)}`,
+    `New Rank: ${formatRankLabel(params.toRank)}`,
+    `Reason: ${params.reason?.trim() || "No reason given."}`,
+    `Approved By: <@${params.approverDiscordId}>`,
+  ].join("\n");
+
+  const res = await fetch(`${DISCORD_API}/channels/${PROMOTION_APPROVED_CHANNEL_ID}/messages`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bot ${BOT_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      content,
+      allowed_mentions: { users: [params.discordId, params.approverDiscordId] },
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to post promotion approval to Discord: ${res.status}`);
+  }
+}
 // channels (Public, Fam, Event) — previously announcements only ever
 // generated an in-app notification and never actually reached Discord.
 const ANNOUNCEMENT_CHANNEL_IDS = [

@@ -13,6 +13,7 @@ interface Request {
   toRank: string;
   status: "PENDING" | "APPROVED" | "REJECTED";
   statsSnapshot: Record<string, unknown>;
+  reason: string | null;
   rejectionNote: string | null;
   createdAt: string;
   isOwn: boolean;
@@ -32,6 +33,7 @@ export function PromotionsClient({
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const [reason, setReason] = useState("");
 
   const hasPending = requests.some((r) => r.isOwn && r.status === "PENDING");
   const myRequests = requests.filter((r) => r.isOwn);
@@ -39,18 +41,23 @@ export function PromotionsClient({
 
   async function submitRequest() {
     if (!nextRank) return;
+    if (reason.trim().length < 5) {
+      toast.error("Give a reason (at least 5 characters) — why do you think you deserve this?");
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch("/api/promotions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ toRank: nextRank }),
+        body: JSON.stringify({ toRank: nextRank, reason: reason.trim() }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
         throw new Error(data?.error ?? "Failed");
       }
-      toast.success("Promotion request submitted");
+      toast.success("Promotion request submitted — also posted to Discord for review.");
+      setReason("");
       router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't submit the request");
@@ -110,6 +117,20 @@ export function PromotionsClient({
                   Address that, then submit again below.
                 </div>
               )}
+              {!hasPending && (
+                <div className="mb-3">
+                  <label className="mb-1.5 block text-xs uppercase tracking-wider text-zinc-500">
+                    Reason
+                  </label>
+                  <textarea
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    rows={2}
+                    placeholder="Why do you think you deserve this promotion?"
+                    className="w-full resize-none rounded-md border border-panel-border bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+                  />
+                </div>
+              )}
               <button
                 onClick={submitRequest}
                 disabled={submitting || hasPending}
@@ -152,6 +173,12 @@ export function PromotionsClient({
                   {"eventsAttended" in r.statsSnapshot && <span>Events attended: {String(r.statsSnapshot.eventsAttended)}</span>}
                   {"strikeCount" in r.statsSnapshot && <span>Strikes: {String(r.statsSnapshot.strikeCount)}</span>}
                 </div>
+                {r.reason && (
+                  <p className="mb-3 rounded-md border border-panel-border bg-white/[0.03] p-2.5 text-xs text-zinc-400">
+                    <span className="text-zinc-500">Reason: </span>
+                    {r.reason}
+                  </p>
+                )}
                 {r.status === "REJECTED" && r.rejectionNote && (
                   <p className="mb-3 rounded-md border border-red-900/40 bg-red-950/10 p-2.5 text-xs text-zinc-400">
                     <span className="text-zinc-500">Reason: </span>

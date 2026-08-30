@@ -6,7 +6,10 @@ export const createPromotionRequestSchema = z.object({
     "ROOKIE", "CADET", "TURFER", "EVENT_MANAGER", "BUSINESS_MANAGER",
     "UNDER_DEPUTY", "DEPUTY", "BOSS", "BIG_BOSS",
   ]),
-  note: z.string().max(500).optional(),
+  // Why you think you deserve the promotion — required so every request
+  // (website or Discord) always has a reason attached, matching the
+  // fixed Name/ID/Prev Rank/Requested Rank/Reason template used on both.
+  reason: z.string().min(5, "Give a reason (at least 5 characters).").max(500),
 });
 
 export const reviewPromotionRequestSchema = z.object({

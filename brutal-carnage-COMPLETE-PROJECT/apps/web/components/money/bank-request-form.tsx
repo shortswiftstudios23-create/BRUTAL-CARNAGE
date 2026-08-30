@@ -18,6 +18,8 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface PersonalExpenseAllowance {
   totalDonated: number;
+  moneyDonated: number;
+  itemsDonatedValue: number;
   cap: number;
   alreadyUsed: number;
   remaining: number;
@@ -111,8 +113,10 @@ export function BankRequestForm({
         </div>
         {category === "PERSONAL_EXPENSE" && (
           <p className="mt-2 text-xs text-zinc-500">
-            Capped at 10% of your lifetime donations (${personalExpenseAllowance.totalDonated.toLocaleString()}).
-            You've used ${personalExpenseAllowance.alreadyUsed.toLocaleString()}, so you have{" "}
+            Capped at 10% of your lifetime donations — money (${personalExpenseAllowance.moneyDonated.toLocaleString()}) plus
+            items donated (${personalExpenseAllowance.itemsDonatedValue.toLocaleString()}), totaling $
+            {personalExpenseAllowance.totalDonated.toLocaleString()}. You've used $
+            {personalExpenseAllowance.alreadyUsed.toLocaleString()}, so you have{" "}
             <span className={overLimit ? "text-red-400" : "text-zinc-300"}>
               ${personalExpenseAllowance.remaining.toLocaleString()} left
             </span>

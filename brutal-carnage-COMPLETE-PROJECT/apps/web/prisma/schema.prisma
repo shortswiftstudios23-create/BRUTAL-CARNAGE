@@ -545,11 +545,20 @@ model PromotionRequest {
   userId        String
   fromRank      Rank
   toRank        Rank
+  reason        String?
   statsSnapshot Json
   status        ApprovalStatus @default(PENDING)
   reviewedById  String?
   reviewedAt    DateTime?
   rejectionNote String?
+
+  // The Discord message (in the promotion-requests channel) that mirrors
+  // this request. Set whichever side the request originated on: the
+  // website posts a new message and stores its id here; a request
+  // typed directly in Discord is parsed into a row here with the
+  // original message's id. Lets approval react ✅ on the right message
+  // no matter where the request came from.
+  discordMessageId String? @unique
 
   createdAt DateTime @default(now())
 

@@ -22,6 +22,8 @@ export default async function LeaderboardPage() {
     moneyDonated: e.moneyDonated,
     itemsDonatedValue: e.itemsDonatedValue,
     itemsTakenValue: e.itemsTakenValue,
+    moneyWithdrawn: e.moneyWithdrawn,
+    totalTaken: e.itemsTakenValue + e.moneyWithdrawn,
     eventsAttended: e.eventsAttended,
     total: e.netContributed,
   }));
@@ -84,12 +86,24 @@ export default async function LeaderboardPage() {
                       <span className="flex items-center gap-1">
                         <CalendarCheck className="h-3 w-3" /> {entry.eventsAttended} events
                       </span>
-                      {entry.itemsTakenValue > 0 && (
-                        <span className="flex items-center gap-1 text-red-500/80">
-                          <PackageMinus className="h-3 w-3" /> -${entry.itemsTakenValue.toLocaleString()} taken
-                        </span>
-                      )}
                     </p>
+                    {entry.totalTaken > 0 && (
+                      <p className="mt-0.5 flex items-center justify-end gap-3 text-xs text-red-500/80">
+                        {entry.moneyWithdrawn > 0 && (
+                          <span className="flex items-center gap-1">
+                            <PackageMinus className="h-3 w-3" /> -${entry.moneyWithdrawn.toLocaleString()} money taken
+                          </span>
+                        )}
+                        {entry.itemsTakenValue > 0 && (
+                          <span className="flex items-center gap-1">
+                            <PackageMinus className="h-3 w-3" /> -${entry.itemsTakenValue.toLocaleString()} items taken
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1 font-medium">
+                          -${entry.totalTaken.toLocaleString()} total taken
+                        </span>
+                      </p>
+                    )}
                   </div>
                 </li>
               );

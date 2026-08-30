@@ -33,6 +33,22 @@
   color-scheme: dark;
 }
 
+/* Belt-and-suspenders fix for dropdown option lists. `color-scheme: dark`
+   on <html> should be enough, but some browsers only honor it when it's
+   set on the <select> itself, and a few ignore it entirely for the native
+   popup and just paint the OS default (white bg / light-gray text — which
+   is what made every dropdown unreadable). Setting it directly on every
+   select plus explicitly coloring <option> covers those cases too. */
+.dark select {
+  color-scheme: dark;
+  background-color: hsl(var(--panel));
+  color: hsl(var(--foreground));
+}
+.dark select option {
+  background-color: hsl(var(--panel));
+  color: hsl(var(--foreground));
+}
+
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));

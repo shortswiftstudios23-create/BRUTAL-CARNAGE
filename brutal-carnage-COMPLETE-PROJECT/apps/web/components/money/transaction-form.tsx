@@ -19,6 +19,11 @@ const formSchema = z.object({
   soldItemId: z.string().optional(),
   soldQuantity: z.coerce.number().int().positive().optional(),
   daysAgo: z.coerce.number().int().min(0).max(2).default(0),
+  // Only meaningful in "take" mode: did the member cover this out of
+  // pocket (so it should be credited to them as a donation, and never
+  // touches the family balance) or should it actually be paid out of
+  // the family balance (a real expense, no donation credit)?
+  fundSource: z.enum(["PERSONAL", "FAMILY_BALANCE"]).default("PERSONAL"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -46,8 +51,11 @@ interface ItemOption {
 // Used to split the form into a clean "Give money" / "Take money" pair
 // instead of one dropdown mixing both directions together.
 const GIVE_TYPES: FormValues["type"][] = ["DONATION", "FAMILY_BONUS", "SOLD_ITEMS", "OTHER_INCOME"];
+// WITHDRAWAL removed on purpose: members no longer pull money out of the
+// family balance through this form. Withdrawals from the family's
+// balance only happen through the top-level "family business" bank
+// request flow (see bank-request-form.tsx).
 const TAKE_TYPES: FormValues["type"][] = [
-  "WITHDRAWAL",
   "FAMILY_RAID",
   "CARS_FUEL",
   "RECALLING_CARS",
@@ -74,17 +82,26 @@ export function TransactionForm({
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { type: allowedTypes[0], amount: undefined, note: "", daysAgo: 0 },
+    defaultValues: { type: allowedTypes[0], amount: undefined, note: "", daysAgo: 0, fundSource: "PERSONAL" },
   });
 
   const watchedType = watch("type");
   const watchedAmount = watch("amount");
+  const watchedFundSource = watch("fundSource");
+
+  // In "take" mode, if the member is covering it personally we submit it
+  // as a DONATION instead (credited to the family + counted as their
+  // donation, never deducted from the family balance). Only an actual
+  // "take from family balance" selection uses the real expense type/tax
+  // rules for that category.
+  const effectiveType: FormValues["type"] =
+    mode === "take" && watchedFundSource === "PERSONAL" ? "DONATION" : watchedType;
 
   const breakdown = useMemo(() => {
     const amount = Number(watchedAmount);
     if (!amount || amount <= 0) return null;
-    return calculateTax(amount, watchedType);
-  }, [watchedType, watchedAmount]);
+    return calculateTax(amount, effectiveType);
+  }, [effectiveType, watchedAmount]);
 
   async function onSubmit(values: FormValues) {
     setSubmitting(true);
@@ -97,7 +114,17 @@ export function TransactionForm({
           ? new Date(Date.now() - values.daysAgo * 24 * 60 * 60 * 1000).toISOString()
           : undefined;
 
-      const payload = { ...values, occurredAt };
+      // Translate "covered personally" into a real DONATION transaction so
+      // it's credited to the family and to the member's donation total,
+      // and never touches the family balance. Only an explicit "take from
+      // family balance" choice submits the real expense category.
+      const isPersonal = mode === "take" && values.fundSource === "PERSONAL";
+      const submittedType = isPersonal ? "DONATION" : values.type;
+      const note = isPersonal
+        ? [values.note?.trim(), `[Spent on: ${CATEGORY_LABELS[values.type]}]`].filter(Boolean).join(" ")
+        : values.note;
+
+      const payload = { ...values, type: submittedType, note, occurredAt };
 
       const res = await fetch("/api/transactions", {
         method: "POST",
@@ -143,6 +170,41 @@ export function TransactionForm({
           ))}
         </select>
       </div>
+
+      {mode === "take" && (
+        <div>
+          <label className="mb-1.5 block text-xs uppercase tracking-wider text-zinc-500">
+            How are you covering this?
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <label
+              className={`cursor-pointer rounded-md border px-3 py-2 text-center text-xs font-medium transition-colors ${
+                watchedFundSource === "PERSONAL"
+                  ? "border-red-800 bg-red-950/30 text-red-200"
+                  : "border-panel-border bg-white/[0.03] text-zinc-400 hover:text-zinc-200"
+              }`}
+            >
+              <input type="radio" value="PERSONAL" {...register("fundSource")} className="sr-only" />
+              I'm paying, credit it as my donation
+            </label>
+            <label
+              className={`cursor-pointer rounded-md border px-3 py-2 text-center text-xs font-medium transition-colors ${
+                watchedFundSource === "FAMILY_BALANCE"
+                  ? "border-red-800 bg-red-950/30 text-red-200"
+                  : "border-panel-border bg-white/[0.03] text-zinc-400 hover:text-zinc-200"
+              }`}
+            >
+              <input type="radio" value="FAMILY_BALANCE" {...register("fundSource")} className="sr-only" />
+              Take it from the family balance
+            </label>
+          </div>
+          <p className="mt-1.5 text-xs text-zinc-600">
+            {watchedFundSource === "PERSONAL"
+              ? "You're covering it — this gets logged as a donation from you and never touches the family balance."
+              : "This amount will be deducted from the family balance. It will not count as a donation."}
+          </p>
+        </div>
+      )}
 
       {watchedType === "SOLD_ITEMS" && (
         <div className="grid grid-cols-2 gap-3">
@@ -230,7 +292,7 @@ export function TransactionForm({
         />
       </div>
 
-      {breakdown && TAXED_TYPES.includes(watchedType) && (
+      {breakdown && TAXED_TYPES.includes(effectiveType) && (
         <div className="rounded-md border border-red-900/50 bg-red-950/20 p-3 text-sm">
           <div className="flex items-center justify-between text-zinc-400">
             <span>Original amount</span>
@@ -239,19 +301,19 @@ export function TransactionForm({
           <div className="mt-1 flex items-center justify-between text-zinc-400">
             <span>Family tax (3%)</span>
             <span className="text-red-400">
-              {watchedType === "DONATION" ? "−" : "+"}${breakdown.taxAmount.toLocaleString()}
+              {effectiveType === "DONATION" ? "−" : "+"}${breakdown.taxAmount.toLocaleString()}
             </span>
           </div>
           <div className="mt-2 flex items-center justify-between border-t border-red-900/40 pt-2 font-medium">
             <span className="text-zinc-300">
-              {watchedType === "DONATION" ? "Credited to family" : "Total you'll pay"}
+              {effectiveType === "DONATION" ? "Credited to family" : "Total you'll pay"}
             </span>
             <span className="text-zinc-100">${breakdown.finalAmount.toLocaleString()}</span>
           </div>
         </div>
       )}
 
-      {breakdown && !TAXED_TYPES.includes(watchedType) && (
+      {breakdown && !TAXED_TYPES.includes(effectiveType) && (
         <div className="rounded-md border border-panel-border bg-white/[0.03] p-3 text-sm text-zinc-400">
           No tax applies to this category. Full amount: <span className="text-zinc-200">${breakdown.finalAmount.toLocaleString()}</span>
         </div>

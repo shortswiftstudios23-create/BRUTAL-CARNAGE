@@ -11,10 +11,13 @@ interface ItemOption {
   id: string;
   name: string;
   currentStock: number;
+  suggestedPrice: number;
 }
 
 interface PersonalExpenseAllowance {
   totalDonated: number;
+  moneyDonated: number;
+  itemsDonatedValue: number;
   cap: number;
   alreadyUsed: number;
   remaining: number;
@@ -69,7 +72,7 @@ export function MoneyFormsTabs({
               You already have a loan open — pay it off before requesting another.
             </div>
           ) : (
-            <LoanRequestForm />
+            <LoanRequestForm items={items} />
           )}
 
           <div className="lg:col-span-2">
