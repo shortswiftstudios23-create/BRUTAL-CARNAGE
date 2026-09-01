@@ -5,7 +5,8 @@ import { MoneyFormsTabs } from "@/components/money/money-forms-tabs";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/permissions";
-import { Wallet, TrendingUp, Clock } from "lucide-react";
+import { Wallet, TrendingUp, Clock, Settings } from "lucide-react";
+import Link from "next/link";
 import { MoneyClient } from "./money-client";
 import { MyLoanCard } from "@/components/money/my-loan-card";
 
@@ -14,29 +15,13 @@ export default async function MoneyPage() {
   const canApprove = can(session!.user.rank, "canApproveTransactions");
   const canApproveBank = can(session!.user.rank, "canApproveBankRequests");
 
-  const [balance, items, pendingTransactionCount, pendingBankCount, unreadCount, pendingTransactions, pendingBankRequests] =
+  const [balance, items, pendingTransactionCount, pendingBankCount, unreadCount] =
     await Promise.all([
       prisma.familyBalance.findUnique({ where: { id: "singleton" } }),
       prisma.item.findMany({ select: { id: true, name: true, currentStock: true }, orderBy: { name: "asc" } }),
       prisma.transaction.count({ where: { status: "PENDING" } }),
       prisma.bankRequest.count({ where: { status: "PENDING" } }),
       prisma.notification.count({ where: { userId: session!.user.id, read: false } }),
-      canApprove
-        ? prisma.transaction.findMany({
-            where: { status: "PENDING" },
-            orderBy: { createdAt: "desc" },
-            take: 20,
-            include: { user: { select: { username: true, rank: true } }, soldItem: { select: { name: true } } },
-          })
-        : Promise.resolve([]),
-      canApproveBank
-        ? prisma.bankRequest.findMany({
-            where: { status: "PENDING" },
-            orderBy: { createdAt: "desc" },
-            take: 20,
-            include: { user: { select: { username: true, rank: true } } },
-          })
-        : Promise.resolve([]),
     ]);
 
   const myPendingRequestsCount = await prisma.bankRequest.count({
@@ -51,6 +36,17 @@ export default async function MoneyPage() {
     <>
       <Topbar pageTitle="Family bank" notificationCount={unreadCount} />
       <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6">
+        {can(session!.user.rank, "canManageCategories") && (
+          <div className="mb-4 flex justify-end">
+            <Link
+              href="/money/categories"
+              className="flex items-center gap-1.5 rounded-md border border-zinc-800 px-3 py-1.5 text-xs text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
+            >
+              <Settings className="h-3.5 w-3.5" />
+              Manage categories
+            </Link>
+          </div>
+        )}
         <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <StatCard
             label="Family balance"
@@ -80,27 +76,8 @@ export default async function MoneyPage() {
         <MoneyClient
           canApprove={canApprove}
           canApproveBank={canApproveBank}
-          pendingTransactions={pendingTransactions.map((t) => ({
-            id: t.id,
-            username: t.user.username,
-            rank: t.user.rank,
-            type: t.type,
-            originalAmount: Number(t.originalAmount),
-            taxAmount: Number(t.taxAmount),
-            finalAmount: Number(t.finalAmount),
-            note: t.note,
-            soldItemName: t.soldItem?.name ?? null,
-            soldQuantity: t.soldQuantity,
-            createdAt: t.createdAt.toISOString(),
-          }))}
-          pendingBankRequests={pendingBankRequests.map((r) => ({
-            id: r.id,
-            username: r.user.username,
-            rank: r.user.rank,
-            amount: Number(r.amount),
-            reason: r.reason,
-            createdAt: r.createdAt.toISOString(),
-          }))}
+          pendingTransactionCount={pendingTransactionCount}
+          pendingBankRequestCount={pendingBankCount}
           myPendingRequestsCount={myPendingRequestsCount}
         />
       </main>

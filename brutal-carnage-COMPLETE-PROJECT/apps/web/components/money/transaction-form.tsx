@@ -4,7 +4,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { calculateTax, TAXED_TYPES } from "@/lib/tax";
 import { backdateOptions } from "@/lib/backdate";
@@ -19,6 +19,7 @@ const formSchema = z.object({
   soldItemId: z.string().optional(),
   soldQuantity: z.coerce.number().int().positive().optional(),
   daysAgo: z.coerce.number().int().min(0).max(2).default(0),
+  customCategoryId: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -40,6 +41,14 @@ interface ItemOption {
   id: string;
   name: string;
   currentStock: number;
+}
+
+interface CategoryOption {
+  id: string;
+  name: string;
+  direction: "INCOME" | "EXPENSE";
+  group: string | null;
+  icon: string | null;
 }
 
 // Which categories count as money coming IN to the family vs going OUT.
@@ -64,7 +73,18 @@ export function TransactionForm({
   mode?: "give" | "take";
 }) {
   const [submitting, setSubmitting] = useState(false);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
   const allowedTypes = mode === "give" ? GIVE_TYPES : TAKE_TYPES;
+
+  // Custom (admin-managed) categories are only relevant once "Other
+  // income/expense" is selected — that's where the fine-grained label
+  // (License Plate, House Payment, Business Profit, etc.) gets attached.
+  useEffect(() => {
+    fetch("/api/admin/categories")
+      .then((r) => r.json())
+      .then((d) => setCategories(d.categories ?? []))
+      .catch(() => setCategories([]));
+  }, []);
 
   const {
     register,
@@ -175,6 +195,40 @@ export function TransactionForm({
           ))}
         </select>
       </div>
+
+      {(watchedType === "OTHER_INCOME" || watchedType === "OTHER_EXPENSE") && (
+        <div>
+          <label className="mb-1.5 block text-xs uppercase tracking-wider text-zinc-500">
+            Specific category <span className="text-zinc-700">(optional)</span>
+          </label>
+          <select
+            {...register("customCategoryId")}
+            className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+          >
+            <option value="">General — no specific category</option>
+            {(() => {
+              const relevant = categories.filter(
+                (c) => c.direction === (watchedType === "OTHER_INCOME" ? "INCOME" : "EXPENSE")
+              );
+              const byGroup: Record<string, CategoryOption[]> = {};
+              for (const c of relevant) {
+                const key = c.group || "Other";
+                if (!byGroup[key]) byGroup[key] = [];
+                byGroup[key].push(c);
+              }
+              return Object.entries(byGroup).map(([group, opts]) => (
+                <optgroup key={group} label={group}>
+                  {opts.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.icon ? `${c.icon} ` : ""}{c.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ));
+            })()}
+          </select>
+        </div>
+      )}
 
       {watchedType === "SOLD_ITEMS" && (
         <div className="grid grid-cols-2 gap-3">

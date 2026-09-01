@@ -23,6 +23,9 @@ export const createTransactionSchema = z
     // Only relevant/required when type === "SOLD_ITEMS"
     soldItemId: z.string().cuid().optional(),
     soldQuantity: z.number().int().positive().optional(),
+    // Optional: fine-grained admin-managed category, only meaningful when
+    // type is OTHER_INCOME/OTHER_EXPENSE — see TransactionCategory.
+    customCategoryId: z.string().cuid().optional(),
     // Optional: "log this for yesterday / the day before" — see lib/backdate.ts
     occurredAt: occurredAtSchema,
   })
@@ -44,6 +47,11 @@ export const reviewBankRequestSchema = z.object({
 export const createLoanSchema = z.object({
   amount: z.number().positive(),
   reason: z.string().min(5).max(500),
+  // How many days the borrower expects to need the loan, and what
+  // they're pledging as collateral — shown to approvers before they decide.
+  durationDays: z.number().int().positive().max(365).optional(),
+  collateralItems: z.string().max(1000).optional(),
+  collateralValue: z.number().nonnegative().optional(),
 });
 
 export const reviewLoanSchema = z.object({

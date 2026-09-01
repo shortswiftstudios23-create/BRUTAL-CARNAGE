@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Check, X, Loader2, PackagePlus, PackageMinus, Wallet, Landmark, HandCoins } from "lucide-react";
+import { Check, X, Loader2, PackagePlus, PackageMinus, Wallet, Landmark, HandCoins, Banknote } from "lucide-react";
 
 interface PendingItem {
   id: string;
@@ -53,6 +53,17 @@ interface PendingLoan {
   principal: number;
   interestRate: number;
   reason: string | null;
+  durationDays: number | null;
+  collateralItems: string | null;
+  collateralValue: number | null;
+  createdAt: string;
+}
+
+interface PendingReimbursement {
+  id: string;
+  username: string;
+  amount: number;
+  reason: string;
   createdAt: string;
 }
 
@@ -139,6 +150,7 @@ export function AdminPanelClient({
   pendingTransactions,
   pendingBankRequests,
   pendingLoans,
+  pendingReimbursements,
 }: {
   canApprovePendingItems: boolean;
   canApproveItemActions: boolean;
@@ -150,6 +162,7 @@ export function AdminPanelClient({
   pendingTransactions: PendingTransaction[];
   pendingBankRequests: PendingBankRequest[];
   pendingLoans: PendingLoan[];
+  pendingReimbursements: PendingReimbursement[];
 }) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -176,7 +189,7 @@ export function AdminPanelClient({
   }
 
   const totalPending =
-    pendingItems.length + pendingItemActions.length + pendingTransactions.length + pendingBankRequests.length + pendingLoans.length;
+    pendingItems.length + pendingItemActions.length + pendingTransactions.length + pendingBankRequests.length + pendingLoans.length + pendingReimbursements.length;
 
   if (
     !canApprovePendingItems &&
@@ -297,9 +310,48 @@ export function AdminPanelClient({
               <p className="text-sm text-zinc-200">
                 <span className="font-medium">{l.username}</span> requests a ${l.principal.toLocaleString()} loan
                 at {(l.interestRate * 100).toFixed(0)}% interest
+                {l.durationDays ? ` for ${l.durationDays} day${l.durationDays === 1 ? "" : "s"}` : ""}
               </p>
               {l.reason && <p className="text-xs text-zinc-500">"{l.reason}"</p>}
+              {(l.collateralItems || l.collateralValue) && (
+                <p className="mt-1 rounded-md border border-zinc-800 bg-zinc-900/50 px-2.5 py-1.5 text-xs text-zinc-400">
+                  <span className="text-zinc-500">Collateral:</span>{" "}
+                  {l.collateralItems || "—"}
+                  {l.collateralValue ? ` (est. $${l.collateralValue.toLocaleString()})` : ""}
+                </p>
+              )}
             </Row>
+          ))}
+        </SectionShell>
+      )}
+
+      {canApproveBankRequests && (
+        <SectionShell
+          icon={Banknote}
+          title="Reimbursements owed"
+          count={pendingReimbursements.length}
+          empty="Nothing owed back to members right now."
+        >
+          {pendingReimbursements.map((r) => (
+            <div
+              key={r.id}
+              className="flex flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-950/60 p-4 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div>
+                <p className="text-sm text-zinc-200">
+                  Owe <span className="font-medium">{r.username}</span> ${r.amount.toLocaleString()}
+                </p>
+                <p className="text-xs text-zinc-500">{r.reason}</p>
+              </div>
+              <button
+                onClick={() => call(`/api/reimbursements/${r.id}/pay`, {}, "Marked as paid", r.id)}
+                disabled={busyId === r.id}
+                className="flex shrink-0 items-center gap-1 rounded-md border border-green-800 bg-green-950/40 px-3 py-1.5 text-xs font-medium text-green-300 hover:bg-green-950/60 disabled:opacity-50"
+              >
+                {busyId === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                Mark paid
+              </button>
+            </div>
           ))}
         </SectionShell>
       )}

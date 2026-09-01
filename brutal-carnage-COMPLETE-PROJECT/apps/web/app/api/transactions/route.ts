@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { type, amount, note, soldItemId, soldQuantity, occurredAt } = parsed.data;
+  const { type, amount, note, soldItemId, soldQuantity, occurredAt, customCategoryId } = parsed.data;
   const breakdown = calculateTax(amount, type);
 
   // For sold-items sales, sanity-check there's enough stock to sell before
@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
       status: "PENDING",
       soldItemId: type === "SOLD_ITEMS" ? soldItemId : undefined,
       soldQuantity: type === "SOLD_ITEMS" ? soldQuantity : undefined,
+      customCategoryId: customCategoryId || undefined,
       occurredAt,
     },
   });

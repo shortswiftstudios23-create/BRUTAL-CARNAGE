@@ -10,6 +10,9 @@ import { toast } from "sonner";
 const formSchema = z.object({
   amount: z.coerce.number().positive("Enter an amount greater than 0"),
   reason: z.string().min(5, "Give a reason (at least 5 characters).").max(500),
+  durationDays: z.coerce.number().int().positive("Enter how many days you'll need it").max(365),
+  collateralItems: z.string().min(3, "Describe what you're putting up as collateral.").max(1000),
+  collateralValue: z.coerce.number().nonnegative("Enter an expected value (0 if none)"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -25,7 +28,7 @@ export function LoanRequestForm() {
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { amount: undefined, reason: "" },
+    defaultValues: { amount: undefined, reason: "", durationDays: undefined, collateralItems: "", collateralValue: undefined },
   });
 
   const watchedAmount = Number(watch("amount"));
@@ -83,6 +86,51 @@ export function LoanRequestForm() {
           If unpaid, in 5 days you'd owe <span className="text-zinc-100">${projectedAfter5Days.toLocaleString()}</span> (12% interest, compounds again every 5 days after that).
         </div>
       )}
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="mb-1.5 block text-xs uppercase tracking-wider text-zinc-500">
+            Days needed
+          </label>
+          <input
+            type="number"
+            min={1}
+            {...register("durationDays")}
+            placeholder="e.g. 10"
+            className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+          />
+          {errors.durationDays && <p className="mt-1 text-xs text-red-500">{errors.durationDays.message}</p>}
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs uppercase tracking-wider text-zinc-500">
+            Collateral value
+          </label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">$</span>
+            <input
+              type="number"
+              step="0.01"
+              {...register("collateralValue")}
+              placeholder="0.00"
+              className="w-full rounded-md border border-zinc-800 bg-zinc-900 py-2 pl-7 pr-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+            />
+          </div>
+          {errors.collateralValue && <p className="mt-1 text-xs text-red-500">{errors.collateralValue.message}</p>}
+        </div>
+      </div>
+
+      <div>
+        <label className="mb-1.5 block text-xs uppercase tracking-wider text-zinc-500">
+          Collateral items
+        </label>
+        <textarea
+          {...register("collateralItems")}
+          rows={2}
+          placeholder="What items are you putting up? e.g. 2x Rifle, 1x Sports Car"
+          className="w-full resize-none rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+        />
+        {errors.collateralItems && <p className="mt-1 text-xs text-red-500">{errors.collateralItems.message}</p>}
+      </div>
 
       <div>
         <label className="mb-1.5 block text-xs uppercase tracking-wider text-zinc-500">Reason</label>

@@ -9,7 +9,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/permissions";
 import { completeEventSchema } from "@/lib/validators/events";
-import { applyBalanceDelta } from "@/lib/balance";
+import { resolveExpenseFunding } from "@/lib/funding";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await auth();
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const { result, bonusAmount, mvpUserId, mvpBonusAmount, attendedUserIds } = parsed.data;
+  const { result, bonusAmount, mvpUserId, mvpBonusAmount, attendedUserIds, fundingSource, personalIntent, personalPayerId } = parsed.data;
 
   await prisma.$transaction(async (tx) => {
     // Mark who actually showed up, regardless of win/loss.
@@ -94,7 +94,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         0
       );
 
-      await applyBalanceDelta(tx, -totalPayout, "EVENT_WIN_BONUS", event.id);
+      // Where the bonus pool money actually came from — family balance
+      // directly, or someone's personal account (as a donation or as an
+      // amount the family now owes back). See lib/funding.ts.
+      await resolveExpenseFunding(tx, {
+        funding: { source: fundingSource, personalIntent },
+        amount: totalPayout,
+        userId: personalPayerId || session.user.id,
+        approvedById: session.user.id,
+        expenseLabel: `Event win bonus — ${event.title}`,
+        refType: "EVENT_WIN_BONUS",
+        refId: event.id,
+      });
     } else {
       // Loss (or no bonus set) — still notify attendees the event closed.
       for (const userId of attendedUserIds) {

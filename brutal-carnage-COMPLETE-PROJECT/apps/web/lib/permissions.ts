@@ -62,6 +62,8 @@ export const PERMISSIONS = {
   canManageAnnouncements: (r: Rank) => isAtLeast(r, "BOSS"),
   canEditFamilyBalanceDirectly: (r: Rank) => isAtLeast(r, "BOSS"),
   canManageAdminWidgets: (r: Rank) => isAtLeast(r, "BOSS"),
+  // Add/deactivate/reorder transaction categories (/money/categories).
+  canManageCategories: (r: Rank) => isAtLeast(r, "BOSS"),
 
   // Admin panel — the consolidated "everything awaiting a decision"
   // screen. Gated to whoever can approve at least one thing (Business

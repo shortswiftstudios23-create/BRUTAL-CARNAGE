@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Loader2, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FundingSourceSelect, type FundingSource, type PersonalIntent } from "@/components/money/funding-source-select";
 
 interface Registration {
   userId: string;
@@ -28,6 +29,8 @@ export function CloseOutForm({
   const [mvpUserId, setMvpUserId] = useState("");
   const [mvpBonusAmount, setMvpBonusAmount] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [fundingSource, setFundingSource] = useState<FundingSource>("FAMILY_BALANCE");
+  const [personalIntent, setPersonalIntent] = useState<PersonalIntent | "">("");
 
   function toggleAttended(userId: string) {
     setAttended((prev) => {
@@ -39,6 +42,10 @@ export function CloseOutForm({
   }
 
   async function submit() {
+    if (result === "WIN" && Number(bonusAmount) > 0 && fundingSource === "PERSONAL_ACCOUNT" && !personalIntent) {
+      toast.error("Choose whether the personal payout counts as a donation or should be paid back.");
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch(`/api/events/${eventId}/complete`, {
@@ -50,6 +57,8 @@ export function CloseOutForm({
           bonusAmount: result === "WIN" && bonusAmount ? Number(bonusAmount) : undefined,
           mvpUserId: result === "WIN" && mvpUserId ? mvpUserId : undefined,
           mvpBonusAmount: result === "WIN" && mvpUserId && mvpBonusAmount ? Number(mvpBonusAmount) : undefined,
+          fundingSource: result === "WIN" && bonusAmount ? fundingSource : undefined,
+          personalIntent: fundingSource === "PERSONAL_ACCOUNT" ? personalIntent : undefined,
         }),
       });
       if (!res.ok) {
@@ -163,6 +172,15 @@ export function CloseOutForm({
           </div>
         )}
       </div>
+
+      {result === "WIN" && Number(bonusAmount) > 0 && (
+        <FundingSourceSelect
+          source={fundingSource}
+          onSourceChange={setFundingSource}
+          intent={personalIntent}
+          onIntentChange={setPersonalIntent}
+        />
+      )}
 
       <button
         onClick={submit}

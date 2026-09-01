@@ -42,6 +42,13 @@ export const completeEventSchema = z
     mvpUserId: z.string().cuid().optional(),
     mvpBonusAmount: z.coerce.number().nonnegative().optional(),
     attendedUserIds: z.array(z.string().cuid()).default([]),
+    // Where the bonus pool money came from. Defaults to the family
+    // balance when omitted (older clients / no bonus set).
+    fundingSource: z.enum(["FAMILY_BALANCE", "PERSONAL_ACCOUNT"]).default("FAMILY_BALANCE"),
+    personalIntent: z.enum(["DONATION", "REIMBURSABLE"]).optional(),
+    // Who fronted it personally — defaults to whoever is closing out the
+    // event if not specified.
+    personalPayerId: z.string().cuid().optional(),
   })
   .refine((d) => d.result === "WIN" || (!d.bonusAmount && !d.mvpBonusAmount), {
     message: "Bonuses can only be awarded on a Win",
@@ -50,4 +57,8 @@ export const completeEventSchema = z
   .refine((d) => !d.mvpBonusAmount || (d.mvpUserId && d.attendedUserIds.includes(d.mvpUserId)), {
     message: "MVP must be one of the marked attendees",
     path: ["mvpUserId"],
+  })
+  .refine((d) => d.fundingSource !== "PERSONAL_ACCOUNT" || !!d.personalIntent, {
+    message: "Choose whether this counts as a donation or should be paid back.",
+    path: ["personalIntent"],
   });

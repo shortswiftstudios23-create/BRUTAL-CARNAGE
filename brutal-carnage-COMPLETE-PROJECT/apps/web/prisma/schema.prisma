@@ -56,6 +56,61 @@ enum TransactionType {
   OTHER_EXPENSE
 }
 
+// Whether a TransactionCategory adds money to FamilyBalance or takes it away.
+// Kept separate from TransactionType on purpose — TransactionType drives the
+// tax/balance-direction logic that's already wired through the app (see
+// lib/tax.ts and the OTHER_INCOME/OTHER_EXPENSE bucket in the approve route),
+// while TransactionCategory is the admin-editable, human-facing label layered
+// on top. A category's direction just has to agree with whichever bucket
+// (OTHER_INCOME or OTHER_EXPENSE) its transactions get filed under.
+enum CategoryDirection {
+  INCOME
+  EXPENSE
+}
+
+// Where the money for a family expense actually came from, and — if it
+// came out of someone's own pocket — whether they want donation credit
+// for it or expect the family to pay them back later. See lib/funding.ts,
+// which is the single place this logic is resolved from, called by every
+// expense-creating route (event bonuses, and future car/house/etc routes).
+enum FundingSource {
+  FAMILY_BALANCE
+  PERSONAL_ACCOUNT
+}
+
+enum PersonalIntent {
+  DONATION
+  REIMBURSABLE
+}
+
+enum ReimbursementStatus {
+  OWED
+  PAID
+}
+
+// An IOU: the family owes this member money because they fronted a family
+// expense from their own pocket and did NOT want it counted as a donation.
+// Created by lib/funding.ts whenever FundingSource=PERSONAL_ACCOUNT and
+// PersonalIntent=REIMBURSABLE. Paying it off (see
+// /api/reimbursements/[id]/pay) deducts the family balance like a
+// WITHDRAWAL and marks it PAID — it never touches donation stats.
+model Reimbursement {
+  id       String               @id @default(cuid())
+  user     User                 @relation("ReimbursementsOwedTo", fields: [userId], references: [id])
+  userId   String
+  amount   Decimal              @db.Decimal(12, 2)
+  reason   String
+  refType  String // e.g. "EVENT_BONUS" — what family expense this was for
+  refId    String?
+  status   ReimbursementStatus  @default(OWED)
+  createdAt DateTime            @default(now())
+  paidAt    DateTime?
+  paidById  String?
+
+  @@index([userId])
+  @@index([status])
+}
+
 enum ItemActionType {
   DONATE
   TAKE
@@ -145,6 +200,7 @@ model User {
   transactions        Transaction[]     @relation("TransactionsByUser")
   bankRequests        BankRequest[]     @relation("BankRequestsByUser")
   loans               Loan[]            @relation("LoansByUser")
+  reimbursementsOwed  Reimbursement[]   @relation("ReimbursementsOwedTo")
   eventRegistrations  EventRegistration[]
   eventsCreated       Event[]           @relation("EventsCreatedBy")
   badges              UserBadge[]
@@ -287,6 +343,30 @@ model BalanceSnapshot {
   @@index([createdAt])
 }
 
+// Admin-managed, human-facing expense/income labels (car insurance, license
+// plate, house payment, business profit, etc). Deliberately a real table
+// instead of an enum so admins can add or retire categories without a code
+// deploy — see /money/categories. Deactivating a category (isActive=false)
+// hides it from new-transaction dropdowns but leaves it attached to past
+// transactions so history and reports never break. Hard-deleting is only
+// allowed from the admin UI when zero transactions reference it.
+model TransactionCategory {
+  id        String            @id @default(cuid())
+  name      String            @unique
+  direction CategoryDirection
+  group     String? // e.g. "Vehicles", "House", "Business" — for grouping the dropdown
+  icon      String? // optional emoji or lucide icon name
+  isActive  Boolean           @default(true)
+  sortOrder Int               @default(0)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  transactions Transaction[]
+
+  @@index([direction])
+  @@index([isActive])
+}
+
 model Transaction {
   id           String          @id @default(cuid())
   type         TransactionType
@@ -295,6 +375,12 @@ model Transaction {
   taxAmount    Decimal         @db.Decimal(12, 2) @default(0)
   finalAmount  Decimal         @db.Decimal(12, 2)
   note         String?
+
+  // Fine-grained admin-managed category (e.g. "License Plate" under the
+  // OTHER_EXPENSE type bucket). Nullable — older transactions and the
+  // fixed built-in types (DONATION, WITHDRAWAL, etc.) don't need one.
+  customCategoryId String?
+  customCategory   TransactionCategory? @relation(fields: [customCategoryId], references: [id])
 
   user         User            @relation("TransactionsByUser", fields: [userId], references: [id])
   userId       String
@@ -319,6 +405,7 @@ model Transaction {
   @@index([userId])
   @@index([type])
   @@index([status])
+  @@index([customCategoryId])
 }
 
 model Loan {
@@ -332,6 +419,15 @@ model Loan {
   userId        String
 
   reason        String?
+
+  // How many days the borrower expects to need the loan for, and what
+  // they're pledging against it. Purely informational for the approver's
+  // judgment call — collateral isn't seized automatically anywhere; a
+  // DEFAULTED loan still has to be marked manually.
+  durationDays     Int?
+  collateralItems  String?  @db.Text
+  collateralValue  Decimal? @db.Decimal(12, 2)
+
   reviewedById  String?
   reviewedAt    DateTime?
   rejectionNote String?
